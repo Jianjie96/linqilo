@@ -11,11 +11,11 @@ let ocrClient = null
 function getOcrClient() {
   if (ocrClient) return ocrClient
 
-  const secretId = process.env.TENCENTCLOUD_SECRETID
-  const secretKey = process.env.TENCENTCLOUD_SECRETKEY
+  const secretId = process.env.SECRETID
+  const secretKey = process.env.SECRETKEY
 
   if (!secretId || !secretKey) {
-    throw new Error('缺少腾讯云密钥，请在云函数环境变量中配置 TENCENTCLOUD_SECRETID 和 TENCENTCLOUD_SECRETKEY')
+    throw new Error('缺少腾讯云密钥，请在云函数环境变量中配置 SECRETID 和 SECRETKEY')
   }
 
   ocrClient = new OcrClient({
