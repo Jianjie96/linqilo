@@ -24,7 +24,7 @@ const _ = db.command
 //   thing1  - 物品名称
 //   date2   - 到期日期
 //   thing3  - 提醒内容
-const TEMPLATE_ID = 'YOUR_TEMPLATE_ID_HERE'
+const TEMPLATE_ID = '68FxhLOgJgDwUZWFOZFunglKqFWCsHPq3vSwsKI9YPY'
 
 // 默认提前提醒天数
 const DEFAULT_ALERT_DAYS = 1

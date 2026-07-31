@@ -62,7 +62,7 @@ Page({
 
     // 调用微信订阅消息授权
     wx.requestSubscribeMessage({
-      tmplIds: ['YOUR_TEMPLATE_ID_HERE'], // 替换为你的模板 ID
+      tmplIds: ['68FxhLOgJgDwUZWFOZFunglKqFWCsHPq3vSwsKI9YPY'], // 替换为你的模板 ID
       success: async (res) => {
         console.log('订阅授权结果:', res)
         const openid = app.globalData.openid
