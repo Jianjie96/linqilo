@@ -1,7 +1,2 @@
 {
-  "permissions": {
-    "openapi": [
-      "ocr.printedText"
-    ]
-  }
 }
