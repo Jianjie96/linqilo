@@ -11,9 +11,14 @@ exports.main = async (event, context) => {
   }
 
   try {
-    // 调用微信 OCR 服务 - 通用印刷体识别
+    // 从云存储下载图片
+    const fileBuffer = await cloud.downloadFile({
+      fileID: fileID
+    })
+
+    // 调用微信 OCR 服务 - 通用印刷体识别（使用 img Buffer 而非 imgUrl）
     const result = await cloud.openapi.ocr.printedText({
-      imgUrl: fileID
+      img: fileBuffer.fileContent
     })
 
     // 提取识别文本
