@@ -9,6 +9,9 @@ App({
     openid: ''
   },
 
+  _loadItemsPromise: null,  // 防重入：复用正在进行的请求
+  _lastLoadTime: 0,         // 上次加载时间戳，防止短时间内重复请求
+
   onLaunch() {
     if (wx.cloud) {
       wx.cloud.init({ traceUser: true })
@@ -17,11 +20,10 @@ App({
     this.loadSettings()
   },
 
-  // 云端初始化：获取 openid + 拉取物品
+  // 云端初始化：获取 openid
   async initCloud() {
     try {
       this.globalData.openid = await cloudApi.getOpenid()
-      await this.loadItems()
     } catch (err) {
       console.error('云端初始化失败:', err)
     }
@@ -42,15 +44,32 @@ App({
 
   // --- 物品操作（全部走云端） ---
 
-  // 从云端加载所有物品
-  async loadItems() {
-    try {
-      const items = await cloudApi.fetchAllItems()
-      this.globalData.items = items
-    } catch (err) {
-      console.error('加载物品失败:', err)
+  // 从云端加载所有物品（防重入 + 缓存）
+  loadItems() {
+    // 正在请求中，直接复用 Promise
+    if (this._loadItemsPromise) return this._loadItemsPromise
+
+    // 缓存未过期（5秒内），直接返回缓存数据
+    const now = Date.now()
+    if (this.globalData.items.length > 0 && now - this._lastLoadTime < 5000) {
+      return Promise.resolve(this.globalData.items)
     }
-    return this.globalData.items
+
+    this._lastLoadTime = now
+    this._loadItemsPromise = cloudApi.fetchAllItems()
+      .then(items => {
+        this.globalData.items = items
+        return items
+      })
+      .catch(err => {
+        console.error('加载物品失败:', err)
+        return this.globalData.items
+      })
+      .finally(() => {
+        this._loadItemsPromise = null
+      })
+
+    return this._loadItemsPromise
   },
 
   // 添加物品

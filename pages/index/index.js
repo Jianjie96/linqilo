@@ -11,17 +11,27 @@ Page({
     expiredCount: 0
   },
 
-  onLoad() {
-    this.refreshItems()
-  },
+  _dataLoaded: false, // 是否已加载过数据
 
   onShow() {
-    this.refreshItems()
+    if (this._dataLoaded) {
+      // 从子页面返回：缓存已是最新（add/detail 直接修改了 globalData），只需重新渲染 UI
+      this._renderItems()
+    } else {
+      // 首次进入：从云端拉取
+      this._dataLoaded = true
+      this.refreshItems()
+    }
   },
 
-  // 刷新列表（从云端拉取）
+  // 从云端拉取并渲染
   async refreshItems() {
     await app.loadItems()
+    this._renderItems()
+  },
+
+  // 仅从缓存渲染（不发网络请求）
+  _renderItems() {
     const rawItems = app.globalData.items
     const alertDays = app.globalData.settings.alertDays
 
