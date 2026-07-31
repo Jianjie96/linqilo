@@ -1,0 +1,125 @@
+<view class="container" wx:if="{{item}}">
+  <!-- 查看模式 -->
+  <block wx:if="{{!isEditing}}">
+    <!-- 状态头部 -->
+    <view class="detail-header header-{{status}}">
+      <view class="header-content">
+        <text class="detail-name">{{item.name}}</text>
+        <text class="detail-category" wx:if="{{item.category}}">{{item.category}}</text>
+      </view>
+
+      <!-- 大倒计时 -->
+      <view class="big-countdown">
+        <text class="countdown-number status-{{status}}">
+          <block wx:if="{{daysRemaining < 0}}">{{daysRemaining * -1}}</block>
+          <block wx:elif="{{daysRemaining === 0}}">0</block>
+          <block wx:else>{{daysRemaining}}</block>
+        </text>
+        <text class="countdown-unit status-{{status}}">
+          <block wx:if="{{daysRemaining < 0}}">天前已过期</block>
+          <block wx:elif="{{daysRemaining === 0}}">今天到期</block>
+          <block wx:else>天后到期</block>
+        </text>
+      </view>
+
+      <view class="countdown-text status-{{status}}">{{countdownText}}</view>
+
+      <!-- 进度条 -->
+      <view class="detail-progress">
+        <view class="progress-bar-lg">
+          <view class="progress-fill-lg progress-{{status}}" style="width: {{progressPercent}}%"></view>
+        </view>
+        <view class="progress-labels">
+          <text>{{item.productionDate || '未知'}}</text>
+          <text>{{item.expiryDate}}</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 详细信息 -->
+    <view class="detail-info card">
+      <view class="info-row">
+        <text class="info-label">物品名称</text>
+        <text class="info-value">{{item.name}}</text>
+      </view>
+      <view class="info-row">
+        <text class="info-label">分类</text>
+        <text class="info-value">{{item.category || '未分类'}}</text>
+      </view>
+      <view class="info-row" wx:if="{{item.productionDate}}">
+        <text class="info-label">生产日期</text>
+        <text class="info-value">{{item.productionDate}}</text>
+      </view>
+      <view class="info-row">
+        <text class="info-label">到期日期</text>
+        <text class="info-value">{{item.expiryDate}}</text>
+      </view>
+      <view class="info-row">
+        <text class="info-label">临期提醒</text>
+        <text class="info-value">提前 {{item.alertDays || 1}} 天</text>
+      </view>
+      <view class="info-row" wx:if="{{item.createdAt}}">
+        <text class="info-label">添加时间</text>
+        <text class="info-value">{{item.createdAtFormatted}}</text>
+      </view>
+    </view>
+
+    <!-- 操作按钮 -->
+    <view class="action-buttons">
+      <button class="btn-primary" bindtap="startEdit">编辑</button>
+      <button class="btn-danger" bindtap="deleteItem">删除</button>
+      <button class="btn-secondary" open-type="share">分享给好友</button>
+    </view>
+  </block>
+
+  <!-- 编辑模式 -->
+  <block wx:if="{{isEditing}}">
+    <view class="edit-form card">
+      <view class="form-group">
+        <text class="form-label">物品名称</text>
+        <input class="form-input" value="{{editName}}" bindinput="onEditNameInput" />
+      </view>
+
+      <view class="form-group">
+        <text class="form-label">生产日期</text>
+        <picker mode="date" value="{{editProductionDate}}" bindchange="onEditProductionChange">
+          <view class="form-input picker-value">
+            <text class="{{editProductionDate ? '' : 'placeholder'}}">{{editProductionDate || '选择生产日期'}}</text>
+            <text class="picker-arrow">▼</text>
+          </view>
+        </picker>
+      </view>
+
+      <view class="form-group">
+        <text class="form-label">到期日期</text>
+        <picker mode="date" value="{{editExpiryDate}}" bindchange="onEditExpiryChange">
+          <view class="form-input picker-value">
+            <text>{{editExpiryDate}}</text>
+            <text class="picker-arrow">▼</text>
+          </view>
+        </picker>
+      </view>
+
+      <view class="form-group">
+        <text class="form-label">临期提醒（提前天数）</text>
+        <view class="alert-days-row">
+          <view
+            wx:for="{{[1, 3, 7, 14, 30]}}"
+            wx:for-item="day"
+            wx:key="*this"
+            class="alert-day-tag {{editAlertDays === day ? 'active' : ''}}"
+            bindtap="onEditAlertDaysChange"
+            data-value="{{day}}"
+          >
+            {{day}}天
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <view class="action-buttons">
+      <button class="btn-primary" bindtap="saveEdit">保存</button>
+      <button class="btn-secondary" bindtap="cancelEdit">取消</button>
+    </view>
+  </block>
+</view>

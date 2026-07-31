@@ -1,0 +1,7 @@
+{
+  "usingComponents": {},
+  "navigationBarTitleText": "到期了么",
+  "enablePullDownRefresh": true,
+  "navigationBarBackgroundColor": "#07C160",
+  "navigationBarTextStyle": "white"
+}

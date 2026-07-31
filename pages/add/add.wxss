@@ -1,0 +1,258 @@
+/* 输入模式标签 */
+.mode-tabs {
+  display: flex;
+  background: #fff;
+  border-radius: 16rpx;
+  padding: 8rpx;
+  margin-bottom: 30rpx;
+}
+
+.mode-tab {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20rpx 0;
+  border-radius: 12rpx;
+  font-size: 28rpx;
+  color: #666;
+  transition: all 0.2s;
+  gap: 8rpx;
+}
+
+.mode-tab.active {
+  background: #07C160;
+  color: #fff;
+  font-weight: 500;
+}
+
+.tab-icon {
+  font-size: 32rpx;
+}
+
+/* OCR 区域 */
+.ocr-section {
+  margin-bottom: 30rpx;
+}
+
+.ocr-actions {
+  display: flex;
+  gap: 20rpx;
+  margin-bottom: 30rpx;
+}
+
+.ocr-btn {
+  flex: 1;
+  background: #fff;
+  border-radius: 20rpx;
+  padding: 40rpx 20rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.04);
+}
+
+.ocr-btn-icon {
+  font-size: 64rpx;
+  margin-bottom: 16rpx;
+}
+
+.ocr-btn-text {
+  font-size: 30rpx;
+  font-weight: 500;
+  color: #333;
+  margin-bottom: 8rpx;
+}
+
+.ocr-btn-desc {
+  font-size: 22rpx;
+  color: #999;
+}
+
+/* OCR 结果 */
+.photo-preview {
+  background: #fff;
+  border-radius: 16rpx;
+  padding: 24rpx;
+  margin-bottom: 24rpx;
+}
+
+.preview-image {
+  width: 100%;
+  border-radius: 12rpx;
+  margin-bottom: 16rpx;
+}
+
+/* OCR 加载状态 */
+.ocr-loading {
+  text-align: center;
+  padding: 24rpx 0;
+}
+
+.loading-text {
+  font-size: 28rpx;
+  color: #07C160;
+}
+
+/* OCR 识别结果 */
+.ocr-result {
+  margin-bottom: 16rpx;
+}
+
+.result-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12rpx;
+}
+
+.result-title {
+  font-size: 26rpx;
+  color: #07C160;
+  font-weight: 500;
+}
+
+.retry-btn {
+  font-size: 24rpx;
+  color: #07C160;
+  padding: 6rpx 16rpx;
+  border: 1rpx solid #07C160;
+  border-radius: 20rpx;
+}
+
+.ocr-textarea {
+  width: 100%;
+  height: 180rpx;
+  border: 2rpx solid #E8E8E8;
+  border-radius: 12rpx;
+  padding: 20rpx;
+  font-size: 28rpx;
+  box-sizing: border-box;
+  background: #FAFAFA;
+}
+
+/* OCR 失败提示 */
+.ocr-fail {
+  text-align: center;
+  padding: 20rpx 0;
+}
+
+.fail-text {
+  font-size: 26rpx;
+  color: #999;
+}
+
+.photo-close-btn {
+  text-align: center;
+  font-size: 26rpx;
+  color: #999;
+  padding: 16rpx 0;
+  border-bottom: 1rpx solid #F0F0F0;
+  margin-bottom: 20rpx;
+}
+
+.ocr-result {
+  background: #fff;
+  border-radius: 16rpx;
+  padding: 24rpx;
+  margin-bottom: 24rpx;
+}
+
+.ocr-textarea {
+  width: 100%;
+  height: 200rpx;
+  border: 2rpx solid #E8E8E8;
+  border-radius: 12rpx;
+  padding: 20rpx;
+  font-size: 28rpx;
+  box-sizing: border-box;
+  background: #FAFAFA;
+  margin-top: 12rpx;
+}
+
+/* OCR 提示 */
+.ocr-tip {
+  background: rgba(7, 193, 96, 0.06);
+  border-radius: 16rpx;
+  padding: 24rpx;
+}
+
+.tip-title {
+  font-size: 28rpx;
+  font-weight: 500;
+  color: #07C160;
+  display: block;
+  margin-bottom: 12rpx;
+}
+
+.tip-text {
+  font-size: 24rpx;
+  color: #666;
+  display: block;
+  margin-bottom: 8rpx;
+  line-height: 1.6;
+}
+
+/* 表单区域 */
+.form-section {
+  background: #fff;
+  border-radius: 20rpx;
+  padding: 30rpx;
+  margin-bottom: 30rpx;
+}
+
+/* 选择器 */
+.picker-value {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.picker-value .placeholder {
+  color: #BBB;
+}
+
+.picker-arrow {
+  font-size: 24rpx;
+  color: #CCC;
+}
+
+/* 保质期切换 */
+.shelf-life-toggle {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.toggle-text {
+  font-size: 24rpx;
+  color: #07C160;
+}
+
+/* 临期提醒天数 */
+.alert-days-row {
+  display: flex;
+  gap: 16rpx;
+  flex-wrap: wrap;
+}
+
+.alert-day-tag {
+  padding: 14rpx 28rpx;
+  border-radius: 30rpx;
+  font-size: 26rpx;
+  background: #F5F5F5;
+  color: #666;
+  border: 2rpx solid transparent;
+}
+
+.alert-day-tag.active {
+  background: rgba(7, 193, 96, 0.1);
+  color: #07C160;
+  border-color: #07C160;
+}
+
+/* 提交区域 */
+.submit-area {
+  padding: 40rpx 0 60rpx;
+}

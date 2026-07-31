@@ -1,0 +1,190 @@
+/* 详情头部 */
+.detail-header {
+  background: #fff;
+  border-radius: 24rpx;
+  padding: 40rpx 30rpx;
+  margin: -20rpx -30rpx 24rpx;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.detail-header::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 8rpx;
+}
+
+.header-safe::before { background: #07C160; }
+.header-warning::before { background: #FF9500; }
+.header-danger::before { background: #FF3B30; }
+.header-expired::before { background: #CCC; }
+
+.header-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16rpx;
+  margin-bottom: 30rpx;
+}
+
+.detail-name {
+  font-size: 40rpx;
+  font-weight: 700;
+  color: #333;
+}
+
+.detail-category {
+  font-size: 22rpx;
+  padding: 4rpx 16rpx;
+  border-radius: 20rpx;
+  background: #F0F0F0;
+  color: #666;
+}
+
+/* 大倒计时 */
+.big-countdown {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 8rpx;
+  margin-bottom: 16rpx;
+}
+
+.countdown-number {
+  font-size: 120rpx;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.countdown-unit {
+  font-size: 30rpx;
+  font-weight: 500;
+}
+
+.countdown-text {
+  font-size: 30rpx;
+  margin-bottom: 30rpx;
+}
+
+/* 进度条 */
+.detail-progress {
+  margin-top: 20rpx;
+}
+
+.progress-bar-lg {
+  height: 12rpx;
+  background: #F0F0F0;
+  border-radius: 6rpx;
+  overflow: hidden;
+}
+
+.progress-fill-lg {
+  height: 100%;
+  border-radius: 6rpx;
+  transition: width 0.5s ease;
+}
+
+.progress-labels {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 8rpx;
+  font-size: 22rpx;
+  color: #BBB;
+}
+
+/* 详细信息 */
+.detail-info {
+  margin-top: 24rpx;
+}
+
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20rpx 0;
+  border-bottom: 1rpx solid #F5F5F5;
+}
+
+.info-row:last-child {
+  border-bottom: none;
+}
+
+.info-label {
+  font-size: 28rpx;
+  color: #999;
+}
+
+.info-value {
+  font-size: 28rpx;
+  color: #333;
+  font-weight: 500;
+}
+
+/* 操作按钮 */
+.action-buttons {
+  padding: 30rpx 0 60rpx;
+  display: flex;
+  flex-direction: column;
+  gap: 20rpx;
+}
+
+.btn-danger {
+  background: #fff;
+  color: #FF3B30;
+  border: 2rpx solid #FF3B30;
+  border-radius: 16rpx;
+  padding: 24rpx 0;
+  text-align: center;
+  font-size: 32rpx;
+  font-weight: 500;
+}
+
+.btn-danger::after {
+  border: none;
+}
+
+/* 编辑表单 */
+.edit-form {
+  margin-bottom: 30rpx;
+}
+
+.alert-days-row {
+  display: flex;
+  gap: 16rpx;
+  flex-wrap: wrap;
+}
+
+.alert-day-tag {
+  padding: 14rpx 28rpx;
+  border-radius: 30rpx;
+  font-size: 26rpx;
+  background: #F5F5F5;
+  color: #666;
+  border: 2rpx solid transparent;
+}
+
+.alert-day-tag.active {
+  background: rgba(7, 193, 96, 0.1);
+  color: #07C160;
+  border-color: #07C160;
+}
+
+/* 选择器 */
+.picker-value {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.picker-value .placeholder {
+  color: #BBB;
+}
+
+.picker-arrow {
+  font-size: 24rpx;
+  color: #CCC;
+}

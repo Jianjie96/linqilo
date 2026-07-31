@@ -1,0 +1,149 @@
+<view class="container">
+  <!-- 输入模式切换 -->
+  <view class="mode-tabs">
+    <view class="mode-tab {{inputMode === 'manual' ? 'active' : ''}}" bindtap="switchToManual">
+      <text class="tab-icon">✏️</text>
+      <text>手动输入</text>
+    </view>
+    <view class="mode-tab {{inputMode === 'photo' ? 'active' : ''}}" bindtap="switchToPhoto">
+      <text class="tab-icon">📷</text>
+      <text>拍照对照</text>
+    </view>
+  </view>
+
+  <!-- 拍照对照模式 -->
+  <view wx:if="{{inputMode === 'photo'}}" class="ocr-section">
+    <!-- 已有图片时显示预览 -->
+    <view class="photo-preview" wx:if="{{ocrImagePath}}">
+      <image class="preview-image" src="{{ocrImagePath}}" mode="widthFix" />
+
+      <!-- 识别中状态 -->
+      <view class="ocr-loading" wx:if="{{isProcessing}}">
+        <text class="loading-text">🔍 正在识别图片中的文字...</text>
+      </view>
+
+      <!-- OCR 识别结果 -->
+      <view class="ocr-result" wx:if="{{ocrResult && !isProcessing}}">
+        <view class="result-header">
+          <text class="result-title">✅ 识别结果（可修改）</text>
+          <text class="retry-btn" bindtap="retryOCR">重新解析</text>
+        </view>
+        <textarea
+          class="ocr-textarea"
+          value="{{ocrResult}}"
+          bindinput="onOCRTextInput"
+          placeholder="识别到的文字内容"
+          maxlength="500"
+        />
+      </view>
+
+      <!-- 识别失败提示 -->
+      <view class="ocr-fail" wx:if="{{!ocrResult && !isProcessing}}">
+        <text class="fail-text">😅 未识别到文字，可手动填写下方表单</text>
+      </view>
+
+      <view class="photo-close-btn" bindtap="closePhoto">✖ 关闭图片</view>
+    </view>
+
+    <!-- 未拍照时显示操作按钮 -->
+    <view wx:if="{{!ocrImagePath}}" class="ocr-actions">
+      <view class="ocr-btn" bindtap="takePhoto">
+        <text class="ocr-btn-icon">📸</text>
+        <text class="ocr-btn-text">拍照</text>
+        <text class="ocr-btn-desc">拍摄包装上的日期标签</text>
+      </view>
+      <view class="ocr-btn" bindtap="chooseFromAlbum">
+        <text class="ocr-btn-icon">🖼️</text>
+        <text class="ocr-btn-text">从相册选择</text>
+        <text class="ocr-btn-desc">选择已有的包装图片</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 手动输入表单 -->
+  <view class="form-section">
+    <!-- 物品名称 -->
+    <view class="form-group">
+      <text class="form-label">物品名称 *</text>
+      <input
+        class="form-input"
+        value="{{name}}"
+        bindinput="onNameInput"
+        placeholder="例如：牛奶、面膜、感冒药"
+        maxlength="50"
+      />
+    </view>
+
+    <!-- 分类 -->
+    <view class="form-group">
+      <text class="form-label">分类</text>
+      <picker mode="selector" range="{{categories}}" value="{{categoryIndex}}" bindchange="onCategoryChange">
+        <view class="form-input picker-value">
+          <text>{{categories[categoryIndex]}}</text>
+          <text class="picker-arrow">▼</text>
+        </view>
+      </picker>
+    </view>
+
+    <!-- 生产日期 -->
+    <view class="form-group">
+      <text class="form-label">生产日期</text>
+      <picker mode="date" value="{{productionDate}}" bindchange="onProductionDateChange">
+        <view class="form-input picker-value">
+          <text class="{{productionDate ? '' : 'placeholder'}}">{{productionDate || '选择生产日期（可选）'}}</text>
+          <text class="picker-arrow">▼</text>
+        </view>
+      </picker>
+    </view>
+
+    <!-- 保质期天数 / 到期日期切换 -->
+    <view class="form-group">
+      <view class="shelf-life-toggle" bindtap="onToggleShelfLife">
+        <text class="form-label">
+          {{useShelfLife ? '保质期（天数）' : '到期日期'}}
+        </text>
+        <text class="toggle-text">{{useShelfLife ? '输入到期日期' : '输入保质期天数'}}</text>
+      </view>
+
+      <view wx:if="{{!useShelfLife}}">
+        <picker mode="date" value="{{expiryDate}}" bindchange="onExpiryDateChange">
+          <view class="form-input picker-value">
+            <text class="{{expiryDate ? '' : 'placeholder'}}">{{expiryDate || '选择到期日期 *'}}</text>
+            <text class="picker-arrow">▼</text>
+          </view>
+        </picker>
+      </view>
+
+      <view wx:if="{{useShelfLife}}">
+        <input
+          class="form-input"
+          type="number"
+          value="{{shelfLife}}"
+          bindinput="onShelfLifeInput"
+          placeholder="输入保质期天数，如：365"
+        />
+      </view>
+    </view>
+
+    <!-- 临期提醒 -->
+    <view class="form-group">
+      <text class="form-label">临期提醒（提前天数）</text>
+      <view class="alert-days-row">
+        <view
+          wx:for="{{[1, 3, 7, 14, 30]}}"
+          wx:key="*this"
+          class="alert-day-tag {{alertDays === item ? 'active' : ''}}"
+          bindtap="onAlertDaysChange"
+          data-value="{{item}}"
+        >
+          {{item}}天
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 提交按钮 -->
+  <view class="submit-area">
+    <button class="btn-primary" bindtap="onSubmit">保存物品</button>
+  </view>
+</view>

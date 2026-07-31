@@ -1,0 +1,176 @@
+.page-index {
+  padding-bottom: 180rpx;
+}
+
+/* 统计栏 */
+.stats-bar {
+  display: flex;
+  align-items: center;
+  background: #fff;
+  padding: 30rpx 20rpx;
+  margin: -20rpx -30rpx 20rpx;
+  border-radius: 0 0 24rpx 24rpx;
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.04);
+}
+
+.stats-content {
+  flex: 1;
+  display: flex;
+  justify-content: space-around;
+}
+
+.settings-btn {
+  padding: 16rpx;
+  margin-left: 8rpx;
+}
+
+.settings-icon {
+  font-size: 40rpx;
+}
+
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.stat-num {
+  font-size: 44rpx;
+  font-weight: 700;
+  color: #333;
+}
+
+.stat-label {
+  font-size: 24rpx;
+  color: #999;
+  margin-top: 4rpx;
+}
+
+.stat-safe .stat-num { color: #07C160; }
+.stat-warning .stat-num { color: #FF9500; }
+.stat-expired .stat-num { color: #999; }
+
+/* 筛选标签 */
+.filter-bar {
+  display: flex;
+  gap: 16rpx;
+  margin-bottom: 20rpx;
+}
+
+.filter-tag {
+  padding: 10rpx 28rpx;
+  border-radius: 30rpx;
+  font-size: 26rpx;
+  background: #fff;
+  color: #666;
+  border: 2rpx solid #E8E8E8;
+}
+
+.filter-tag.active {
+  background: #07C160;
+  color: #fff;
+  border-color: #07C160;
+}
+
+/* 物品卡片 */
+.item-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16rpx;
+}
+
+.item-name {
+  font-size: 34rpx;
+  font-weight: 600;
+  color: #333;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.item-status {
+  font-size: 24rpx;
+  padding: 4rpx 16rpx;
+  border-radius: 20rpx;
+  font-weight: 500;
+  margin-left: 16rpx;
+  flex-shrink: 0;
+}
+
+.status-safe {
+  background: rgba(7, 193, 96, 0.1);
+}
+
+.status-warning {
+  background: rgba(255, 149, 0, 0.1);
+}
+
+.status-danger {
+  background: rgba(255, 59, 48, 0.1);
+}
+
+.status-expired {
+  background: rgba(153, 153, 153, 0.1);
+}
+
+/* 倒计时 */
+.countdown-row {
+  margin-bottom: 16rpx;
+}
+
+.countdown-text {
+  font-size: 36rpx;
+  font-weight: 700;
+}
+
+/* 底部信息 */
+.item-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.item-date {
+  font-size: 24rpx;
+  color: #999;
+}
+
+.item-note {
+  font-size: 22rpx;
+  color: #07C160;
+  background: rgba(7, 193, 96, 0.08);
+  padding: 4rpx 12rpx;
+  border-radius: 8rpx;
+}
+
+/* 进度条 */
+.progress-bar {
+  height: 6rpx;
+  background: #F0F0F0;
+  border-radius: 3rpx;
+  margin-top: 16rpx;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  border-radius: 3rpx;
+  transition: width 0.3s;
+}
+
+.progress-safe { background: #07C160; }
+.progress-warning { background: #FF9500; }
+.progress-danger { background: #FF3B30; }
+.progress-expired { background: #CCC; }
+
+/* 物品列表 */
+.item-list {
+  height: calc(100vh - 340rpx);
+}

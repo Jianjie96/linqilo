@@ -1,0 +1,128 @@
+<view class="container">
+  <!-- 消息通知 -->
+  <view class="section-title">临期消息通知</view>
+  <view class="card">
+    <view class="settings-desc">
+      开启后每天早上 8:00 自动检查临期物品，并通过微信服务通知提醒你
+    </view>
+
+    <block wx:if="{{cloudEnabled}}">
+      <view wx:if="{{!isSubscribed}}" class="notify-action">
+        <button class="btn-primary" bindtap="subscribeNotification">🔔 开启临期通知</button>
+        <text class="notify-hint">需要授权订阅消息权限</text>
+      </view>
+
+      <view wx:if="{{isSubscribed}}" class="notify-status">
+        <view class="status-row">
+          <text class="status-dot"></text>
+          <text class="status-text">通知已开启</text>
+        </view>
+        <view class="notify-actions-row">
+          <text class="link-btn" bindtap="manualSync">
+            {{isSyncing ? '同步中...' : '🔄 立即同步数据'}}
+          </text>
+          <text class="link-btn link-danger" bindtap="unsubscribeNotification">关闭通知</text>
+        </view>
+      </view>
+    </block>
+
+    <block wx:if="{{!cloudEnabled}}">
+      <view class="notify-disabled">
+        <text class="disabled-text">云开发未启用，通知功能不可用</text>
+        <text class="disabled-hint">请先在微信开发者工具中开通云开发</text>
+      </view>
+    </block>
+  </view>
+
+  <!-- 默认临期提醒 -->
+  <view class="section-title">临期提醒设置</view>
+  <view class="card">
+    <view class="settings-desc">
+      物品到期前多少天标记为「临期」状态
+    </view>
+
+    <view class="alert-options">
+      <view
+        class="alert-option {{alertDays === 1 ? 'active' : ''}}"
+        bindtap="onAlertDaysChange"
+        data-value="1"
+      >
+        <text class="option-num">1</text>
+        <text class="option-text">天</text>
+      </view>
+      <view
+        class="alert-option {{alertDays === 3 ? 'active' : ''}}"
+        bindtap="onAlertDaysChange"
+        data-value="3"
+      >
+        <text class="option-num">3</text>
+        <text class="option-text">天</text>
+      </view>
+      <view
+        class="alert-option {{alertDays === 7 ? 'active' : ''}}"
+        bindtap="onAlertDaysChange"
+        data-value="7"
+      >
+        <text class="option-num">7</text>
+        <text class="option-text">天</text>
+      </view>
+      <view
+        class="alert-option {{alertDays === 14 ? 'active' : ''}}"
+        bindtap="onAlertDaysChange"
+        data-value="14"
+      >
+        <text class="option-num">14</text>
+        <text class="option-text">天</text>
+      </view>
+      <view
+        class="alert-option {{alertDays === 30 ? 'active' : ''}}"
+        bindtap="onAlertDaysChange"
+        data-value="30"
+      >
+        <text class="option-num">30</text>
+        <text class="option-text">天</text>
+      </view>
+    </view>
+
+    <view class="custom-input-row">
+      <text class="custom-label">自定义天数：</text>
+      <input
+        class="custom-input"
+        type="number"
+        value="{{alertDays}}"
+        bindblur="onCustomAlertDays"
+        placeholder="输入天数"
+      />
+      <text class="custom-unit">天</text>
+    </view>
+  </view>
+
+  <!-- 数据管理 -->
+  <view class="section-title">数据管理</view>
+  <view class="card">
+    <view class="settings-item" bindtap="exportData">
+      <text class="settings-item-label">📋 导出数据</text>
+      <text class="settings-item-value">{{totalItems}} 条记录</text>
+      <text class="settings-item-arrow">›</text>
+    </view>
+    <view class="settings-item" bindtap="clearAllData">
+      <text class="settings-item-label">🗑️ 清除所有数据</text>
+      <text class="settings-item-arrow">›</text>
+    </view>
+  </view>
+
+  <!-- 关于 -->
+  <view class="section-title">关于</view>
+  <view class="card">
+    <view class="settings-item" bindtap="showAbout">
+      <text class="settings-item-label">关于「到期了么」</text>
+      <text class="settings-item-value">v{{aboutInfo.version}}</text>
+      <text class="settings-item-arrow">›</text>
+    </view>
+  </view>
+
+  <!-- 底部 -->
+  <view class="settings-footer">
+    <text class="footer-text">到期了么 · 让每一件物品都不被浪费</text>
+  </view>
+</view>

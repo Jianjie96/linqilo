@@ -1,0 +1,76 @@
+<view class="page-index">
+  <!-- 顶部统计 -->
+  <view class="stats-bar">
+    <view class="stats-content">
+      <view class="stat-item">
+        <text class="stat-num">{{items.length}}</text>
+        <text class="stat-label">全部</text>
+      </view>
+      <view class="stat-item stat-safe">
+        <text class="stat-num">{{safeCount}}</text>
+        <text class="stat-label">安全</text>
+      </view>
+      <view class="stat-item stat-warning">
+        <text class="stat-num">{{warningCount}}</text>
+        <text class="stat-label">临期</text>
+      </view>
+      <view class="stat-item stat-expired">
+        <text class="stat-num">{{expiredCount}}</text>
+        <text class="stat-label">已过期</text>
+      </view>
+    </view>
+    <view class="settings-btn" bindtap="goSettings">
+      <text class="settings-icon">⚙️</text>
+    </view>
+  </view>
+
+  <!-- 筛选标签 -->
+  <view class="filter-bar">
+    <view class="filter-tag {{filterTab === 'all' ? 'active' : ''}}" bindtap="onFilterTab" data-tab="all">全部</view>
+    <view class="filter-tag {{filterTab === 'safe' ? 'active' : ''}}" bindtap="onFilterTab" data-tab="safe">安全</view>
+    <view class="filter-tag {{filterTab === 'warning' ? 'active' : ''}}" bindtap="onFilterTab" data-tab="warning">临期</view>
+    <view class="filter-tag {{filterTab === 'expired' ? 'active' : ''}}" bindtap="onFilterTab" data-tab="expired">已过期</view>
+  </view>
+
+  <!-- 物品列表 -->
+  <scroll-view scroll-y class="item-list" wx:if="{{!isEmpty}}">
+    <block wx:for="{{items}}" wx:key="id">
+      <view
+        wx:if="{{filterTab === 'all' || (filterTab === 'safe' && item.status === 'safe') || (filterTab === 'warning' && (item.status === 'warning' || item.status === 'danger')) || (filterTab === 'expired' && item.status === 'expired')}}"
+        class="item-card card"
+        bindtap="goDetail"
+        data-id="{{item.id}}"
+      >
+        <view class="item-header">
+          <view class="item-name">{{item.name}}</view>
+          <view class="item-status status-{{item.status}}">{{item.statusText}}</view>
+        </view>
+
+        <!-- 倒计时 -->
+        <view class="countdown-row">
+          <text class="countdown-text status-{{item.status}}">{{item.countdownText}}</text>
+        </view>
+
+        <view class="item-footer">
+          <text class="item-date">到期：{{item.expiryDate}}</text>
+          <text class="item-note" wx:if="{{item.category}}">{{item.category}}</text>
+        </view>
+
+        <!-- 进度条 -->
+        <view class="progress-bar">
+          <view class="progress-fill progress-{{item.status}}" style="width: {{item.status === 'expired' ? '100' : (item.daysRemaining > 30 ? '10' : (item.daysRemaining > 7 ? '40' : (item.daysRemaining > 0 ? '70' : '100')))}}%"></view>
+        </view>
+      </view>
+    </block>
+  </scroll-view>
+
+  <!-- 空状态 -->
+  <view class="empty-state" wx:if="{{isEmpty}}">
+    <text class="empty-icon">📦</text>
+    <text class="empty-text">还没有物品</text>
+    <text class="empty-text">点击下方按钮添加你的第一个物品吧</text>
+  </view>
+
+  <!-- 浮动添加按钮 -->
+  <button class="fab" bindtap="goAdd">+</button>
+</view>
