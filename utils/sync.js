@@ -76,7 +76,7 @@ async function updateSubscription(openid, enabled) {
   const collection = db.collection(COLLECTION_SUBSCRIPTIONS)
 
   try {
-    const existing = await collection.where({ _openid: openid }).get()
+    const existing = await collection.where({ openid }).get()
 
     if (existing.data.length > 0) {
       await collection.doc(existing.data[0]._id).update({
@@ -85,7 +85,7 @@ async function updateSubscription(openid, enabled) {
     } else {
       await collection.add({
         data: {
-          _openid: openid,
+          openid,
           enabled,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString()
@@ -104,7 +104,7 @@ async function getSubscriptionStatus(openid) {
   const collection = db.collection(COLLECTION_SUBSCRIPTIONS)
 
   try {
-    const res = await collection.where({ _openid: openid }).get()
+    const res = await collection.where({ openid }).get()
     if (res.data.length > 0) {
       return { enabled: res.data[0].enabled }
     }
