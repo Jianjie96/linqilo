@@ -20,16 +20,24 @@ const _ = db.command
  */
 
 // ⚠️ 请替换为你在微信公众平台申请的订阅消息模板 ID
-// 推荐模板字段：
-//   thing1  - 物品名称
-//   date2   - 到期日期
-//   thing3  - 提醒内容
+// 模板字段（需与微信公众平台模板一一对应）：
+//   thing7  - 物品名称
+//   time6   - 过期日期
+//   thing3  - 备注
 const TEMPLATE_ID = '68FxhLOgJgDwUZWFOZFunglKqFWCsHPq3vSwsKI9YPY'
 
 // 默认提前提醒天数
 const DEFAULT_ALERT_DAYS = 1
 
+// ⚠️ 测试模式：true 时跳过物品查询，直接向所有已订阅用户发送测试通知
+// 测试完成后请改回 false，并将 cron 时间改回 "0 0 8 * * * *"
+const TEST_MODE = true
+
 exports.main = async (event, context) => {
+  if (TEST_MODE) {
+    return await testNotify()
+  }
+
   const today = new Date()
   today.setHours(0, 0, 0, 0)
 
@@ -126,8 +134,8 @@ exports.main = async (event, context) => {
           templateId: TEMPLATE_ID,
           page: '/pages/index/index',
           data: {
-            thing1: { value: mostUrgent.name.substring(0, 20) },
-            date2: { value: mostUrgent.expiryDate },
+            thing7: { value: mostUrgent.name.substring(0, 20) },
+            time6: { value: mostUrgent.expiryDate },
             thing3: { value: reminderText.substring(0, 20) }
           }
         })
@@ -149,6 +157,68 @@ exports.main = async (event, context) => {
     }
   } catch (err) {
     console.error('通知云函数执行失败:', err)
+    return {
+      success: false,
+      error: err.message
+    }
+  }
+}
+
+// --- 测试模式（TEST_MODE=true 时执行） ---
+
+async function testNotify() {
+  const todayStr = formatDate(new Date())
+
+  try {
+    // 查询所有已订阅用户
+    const subsRes = await db.collection('subscriptions').where({
+      enabled: true
+    }).get()
+
+    const subscribedUsers = subsRes.data || []
+    if (subscribedUsers.length === 0) {
+      return {
+        success: false,
+        sent: 0,
+        message: '没有订阅用户，请先在小程序设置页点击「开启通知」'
+      }
+    }
+
+    let sentCount = 0
+    const errors = []
+
+    for (const sub of subscribedUsers) {
+      try {
+        await cloud.openapi.subscribeMessage.send({
+          touser: sub.openid,
+          templateId: TEMPLATE_ID,
+          page: '/pages/index/index',
+          data: {
+            thing7: { value: '测试通知' },
+            time6: { value: todayStr },
+            thing3: { value: '这是一条测试消息，验证通知是否正常发送' }
+          }
+        })
+        sentCount++
+      } catch (err) {
+        console.error(`发送失败 openid=${sub.openid}`, JSON.stringify({
+          errCode: err.errCode,
+          errMsg: err.errMsg || err.message,
+          detail: err
+        }))
+        errors.push({ openid: sub.openid, error: err.errCode || err.message })
+      }
+    }
+
+    return {
+      success: sentCount > 0,
+      sent: sentCount,
+      total: subscribedUsers.length,
+      errors: errors.length > 0 ? errors : undefined,
+      message: `测试模式：发送 ${sentCount} 条通知（共 ${subscribedUsers.length} 个订阅用户）`
+    }
+  } catch (err) {
+    console.error('测试通知发送失败:', err)
     return {
       success: false,
       error: err.message
