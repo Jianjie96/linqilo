@@ -243,7 +243,7 @@
 }
 
 .badge-item {
-  width: calc(33.33% - 14rpx);
+  width: calc((100% - 40rpx) / 3);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -252,6 +252,7 @@
   border-radius: 16rpx;
   background: #FAFAFA;
   border: 2rpx solid transparent;
+  box-sizing: border-box;
 }
 
 .badge-item.locked {

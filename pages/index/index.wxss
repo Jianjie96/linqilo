@@ -1,8 +1,12 @@
 .page-index {
-  padding-bottom: 180rpx;
+  padding-bottom: 160rpx;
   overflow-x: hidden;
   width: 100%;
   box-sizing: border-box;
+}
+
+.index-content {
+  padding: 0 30rpx;
 }
 
 /* 统计栏 */
@@ -24,58 +28,100 @@
   justify-content: space-around;
 }
 
-.top-icons {
+/* ===== 成就卡片 ===== */
+.achievement-card {
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+  border-radius: 20rpx;
+  padding: 28rpx 28rpx 20rpx;
+  margin-bottom: 20rpx;
+  box-shadow: 0 8rpx 30rpx rgba(15, 52, 96, 0.25);
+}
+
+.ac-top {
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  gap: 8rpx;
-}
-
-.icon-btn {
-  padding: 16rpx;
-}
-
-.icon-emoji {
-  font-size: 40rpx;
-}
-
-/* 成就横幅 */
-.achievement-banner {
-  display: flex;
-  align-items: center;
-  background: linear-gradient(135deg, rgba(7, 193, 96, 0.08), rgba(7, 193, 96, 0.03));
-  border: 2rpx solid rgba(7, 193, 96, 0.15);
-  border-radius: 16rpx;
-  padding: 20rpx 24rpx;
   margin-bottom: 20rpx;
 }
 
-.banner-icon {
-  font-size: 40rpx;
-  margin-right: 16rpx;
-}
-
-.banner-content {
-  flex: 1;
+.ac-level {
   display: flex;
-  flex-direction: column;
+  align-items: center;
+  gap: 12rpx;
 }
 
-.banner-title {
+.ac-level-icon {
+  font-size: 44rpx;
+}
+
+.ac-level-name {
   font-size: 28rpx;
   font-weight: 600;
-  color: #333;
+  color: #FFD700;
 }
 
-.banner-sub {
+.ac-badge-count {
   font-size: 22rpx;
-  color: #07C160;
+  color: rgba(255, 255, 255, 0.6);
+  background: rgba(255, 255, 255, 0.1);
+  padding: 6rpx 16rpx;
+  border-radius: 20rpx;
+}
+
+.ac-stats {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  margin-bottom: 16rpx;
+}
+
+.ac-stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.ac-stat-num {
+  font-size: 52rpx;
+  font-weight: 800;
+  color: #fff;
+  line-height: 1.2;
+}
+
+.ac-stat-num.ac-money {
+  color: #FFD700;
+  font-size: 44rpx;
+}
+
+.ac-stat-label {
+  font-size: 22rpx;
+  color: rgba(255, 255, 255, 0.55);
   margin-top: 4rpx;
 }
 
-.banner-arrow {
-  font-size: 36rpx;
-  color: #07C160;
-  font-weight: 300;
+.ac-divider {
+  width: 2rpx;
+  height: 60rpx;
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.ac-footer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding-top: 16rpx;
+  border-top: 1rpx solid rgba(255, 255, 255, 0.08);
+}
+
+.ac-footer-text {
+  font-size: 24rpx;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.ac-arrow {
+  font-size: 30rpx;
+  color: rgba(255, 255, 255, 0.4);
+  margin-left: 6rpx;
 }
 
 .stat-item {
@@ -126,6 +172,55 @@
 .item-card {
   position: relative;
   overflow: hidden;
+  padding: 0;
+  background: #fff;
+}
+
+.item-inner {
+  padding: 30rpx;
+}
+
+/* ===== 左滑删除 ===== */
+.swipe-wrapper {
+  position: relative;
+  margin-bottom: 20rpx;
+  border-radius: 20rpx;
+  overflow: hidden;
+  background: #F5F5F5;
+}
+
+.swipe-wrapper .item-card {
+  margin-bottom: 0;
+}
+
+.swipe-delete-btn {
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 120rpx;
+  background: #FF3B30;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 28rpx;
+  font-weight: 500;
+  border-radius: 0 20rpx 20rpx 0;
+  z-index: 0;
+}
+
+.swipe-hint {
+  position: absolute;
+  right: 24rpx;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.swipe-hint-text {
+  font-size: 20rpx;
+  color: #ccc;
 }
 
 .item-header {
@@ -220,7 +315,73 @@
 .progress-danger { background: #FF3B30; }
 .progress-expired { background: #CCC; }
 
+/* ===== 底部操作栏 ===== */
+.bottom-bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20rpx 30rpx 60rpx;
+  background: linear-gradient(180deg, rgba(245, 245, 245, 0) 0%, rgba(245, 245, 245, 0.95) 30%, rgba(245, 245, 245, 1) 100%);
+  z-index: 100;
+}
+
+.bottom-left {
+  width: 120rpx;
+}
+
+.fab-pill {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10rpx;
+  background: linear-gradient(135deg, #07C160, #06AD56);
+  color: #fff;
+  border-radius: 48rpx;
+  padding: 24rpx 48rpx;
+  font-size: 30rpx;
+  font-weight: 600;
+  box-shadow: 0 8rpx 28rpx rgba(7, 193, 96, 0.45);
+  border: none;
+}
+
+.fab-pill::after {
+  border: none;
+}
+
+.fab-icon {
+  font-size: 36rpx;
+  font-weight: 300;
+  line-height: 1;
+}
+
+.fab-label {
+  font-size: 30rpx;
+  line-height: 1;
+}
+
+.settings-entry {
+  width: 120rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4rpx;
+  padding: 10rpx 0;
+}
+
+.settings-icon {
+  font-size: 32rpx;
+}
+
+.settings-label {
+  font-size: 20rpx;
+  color: #999;
+}
+
 /* 物品列表 */
 .item-list {
-  height: calc(100vh - 340rpx);
+  height: calc(100vh - 500rpx);
 }
