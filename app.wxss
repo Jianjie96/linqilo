@@ -5,6 +5,9 @@ page {
   color: #333;
   font-size: 28rpx;
   line-height: 1.6;
+  overflow-x: hidden;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 /* 颜色变量 */
