@@ -9,7 +9,7 @@ Page({
     isSyncing: false, // 是否正在同步
     cloudEnabled: false, // 云开发是否可用
     aboutInfo: {
-      name: '叮咚到期'
+      name: '叮咚到期',
       version: '1.0.0'
     }
   },
