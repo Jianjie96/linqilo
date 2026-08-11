@@ -10,19 +10,45 @@ Page({
     shelfLife: '',
     category: '',
     alertDays: 1,
+    customAlertDays: '',
+    isCustomDays: false,
     inputMode: 'manual', // manual | photo
     ocrImagePath: '', // 拍照参考图片路径
     ocrResult: '', // OCR 识别结果文本
     isProcessing: false, // 是否正在处理 OCR
     categories: ['食品', '药品', '化妆品', '日用品', '其他'],
     categoryIndex: 4,
-    useShelfLife: false // 是否使用保质期天数来计算到期日
+    useShelfLife: false, // 是否使用保质期天数来计算到期日
+    isSubscribed: false,
+    cloudEnabled: false
   },
 
   onLoad(options) {
     this.setData({
-      alertDays: app.globalData.settings.alertDays
+      alertDays: app.globalData.settings.alertDays,
+      cloudEnabled: !!wx.cloud
     })
+    if (wx.cloud) {
+      this.checkSubscriptionStatus()
+    }
+  },
+
+  onShow() {
+    if (wx.cloud) {
+      this.checkSubscriptionStatus()
+    }
+  },
+
+  // 检查通知订阅状态
+  async checkSubscriptionStatus() {
+    const openid = app.globalData.openid
+    if (!openid) return
+    try {
+      const status = await syncUtil.getSubscriptionStatus(openid)
+      this.setData({ isSubscribed: status.enabled })
+    } catch (err) {
+      // 静默失败
+    }
   },
 
   // 输入物品名称
@@ -65,15 +91,47 @@ Page({
   // 选择分类
   onCategoryChange(e) {
     const index = e.detail.value
+    const categoryAlertMap = [1, 7, 7, 3, 1] // 食品/药品/化妆品/日用品/其他
     this.setData({
       categoryIndex: index,
-      category: this.data.categories[index]
+      category: this.data.categories[index],
+      alertDays: categoryAlertMap[index],
+      isCustomDays: false,
+      customAlertDays: ''
     })
   },
 
   // 设置临期提醒天数
   onAlertDaysChange(e) {
-    this.setData({ alertDays: parseInt(e.currentTarget.dataset.value) })
+    this.setData({
+      alertDays: parseInt(e.currentTarget.dataset.value),
+      isCustomDays: false,
+      customAlertDays: ''
+    })
+  },
+
+  // 切换自定义天数
+  onToggleCustomDays() {
+    const isCustom = !this.data.isCustomDays
+    this.setData({
+      isCustomDays: isCustom,
+      customAlertDays: isCustom ? String(this.data.alertDays) : ''
+    })
+  },
+
+  // 自定义天数输入
+  onCustomAlertDaysInput(e) {
+    const val = parseInt(e.detail.value)
+    const customAlertDays = e.detail.value
+    this.setData({
+      customAlertDays,
+      alertDays: isNaN(val) || val < 1 ? 1 : Math.min(val, 365)
+    })
+  },
+
+  // 跳转设置页开启通知
+  goSettingsForNotify() {
+    wx.navigateTo({ url: '/pages/settings/settings' })
   },
 
   // 切换到拍照模式
