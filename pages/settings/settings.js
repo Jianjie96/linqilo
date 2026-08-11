@@ -9,7 +9,7 @@ Page({
     isSyncing: false, // 是否正在同步
     cloudEnabled: false, // 云开发是否可用
     aboutInfo: {
-      name: '到期了么',
+      name: '叮咚到期'
       version: '1.0.0'
     }
   },
@@ -186,7 +186,7 @@ Page({
   showAbout() {
     wx.showModal({
       title: '关于',
-      content: '到期了么 v1.0.0\n\n一个简单好用的物品到期提醒工具。\n帮你管理食品、药品、化妆品等物品的保质期，不再浪费。',
+      content: '叮咚到期 v1.0.0\n\n提前记录食品、证件、物品的到期日，临期时主动通知你，重要事情不再忘。',
       showCancel: false,
       confirmText: '知道了'
     })

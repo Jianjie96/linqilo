@@ -1,6 +1,6 @@
 {
   "usingComponents": {},
-  "navigationBarTitleText": "到期了么",
+  "navigationBarTitleText": "叮咚到期"
   "enablePullDownRefresh": true,
   "navigationBarBackgroundColor": "#07C160",
   "navigationBarTextStyle": "white"

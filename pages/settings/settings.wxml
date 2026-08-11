@@ -115,7 +115,7 @@
   <view class="section-title">关于</view>
   <view class="card">
     <view class="settings-item" bindtap="showAbout">
-      <text class="settings-item-label">关于「到期了么」</text>
+      <text class="settings-item-label">关于「叮咚到期」</text>
       <text class="settings-item-value">v{{aboutInfo.version}}</text>
       <text class="settings-item-arrow">›</text>
     </view>
@@ -123,6 +123,6 @@
 
   <!-- 底部 -->
   <view class="settings-footer">
-    <text class="footer-text">到期了么 · 让每一件物品都不被浪费</text>
+    <text class="footer-text">叮咚到期 · 提前记录，临期提醒，重要事情不再忘</text>
   </view>
 </view>
