@@ -24,13 +24,58 @@
   justify-content: space-around;
 }
 
-.settings-btn {
-  padding: 16rpx;
-  margin-left: 8rpx;
+.top-icons {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
 }
 
-.settings-icon {
+.icon-btn {
+  padding: 16rpx;
+}
+
+.icon-emoji {
   font-size: 40rpx;
+}
+
+/* 成就横幅 */
+.achievement-banner {
+  display: flex;
+  align-items: center;
+  background: linear-gradient(135deg, rgba(7, 193, 96, 0.08), rgba(7, 193, 96, 0.03));
+  border: 2rpx solid rgba(7, 193, 96, 0.15);
+  border-radius: 16rpx;
+  padding: 20rpx 24rpx;
+  margin-bottom: 20rpx;
+}
+
+.banner-icon {
+  font-size: 40rpx;
+  margin-right: 16rpx;
+}
+
+.banner-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.banner-title {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #333;
+}
+
+.banner-sub {
+  font-size: 22rpx;
+  color: #07C160;
+  margin-top: 4rpx;
+}
+
+.banner-arrow {
+  font-size: 36rpx;
+  color: #07C160;
+  font-weight: 300;
 }
 
 .stat-item {

@@ -1,4 +1,5 @@
 const util = require('../../utils/util.js')
+const syncUtil = require('../../utils/sync.js')
 const app = getApp()
 
 Page({
@@ -250,6 +251,7 @@ Page({
     wx.showLoading({ title: '保存中...' })
     try {
       await app.addItem(item)
+      syncUtil.recordAdd() // 记录追踪统计（不阻塞）
       wx.hideLoading()
       wx.showToast({
         title: '添加成功',

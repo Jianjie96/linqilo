@@ -1,0 +1,99 @@
+<view class="page-leaderboard">
+  <!-- 加载中 -->
+  <view class="loading-state" wx:if="{{loading}}">
+    <text class="loading-icon">⏳</text>
+    <text class="loading-text">正在统计你的成就...</text>
+  </view>
+
+  <block wx:if="{{!loading}}">
+    <!-- 主成就卡片 -->
+    <view class="hero-card">
+      <view class="hero-bg"></view>
+      <view class="hero-content">
+        <view class="hero-level">
+          <text class="level-icon">{{levelInfo.icon}}</text>
+          <text class="level-name">{{levelInfo.name}}</text>
+        </view>
+        <view class="hero-number">
+          <text class="hero-count">{{stats.totalSaved}}</text>
+          <text class="hero-unit">件</text>
+        </view>
+        <text class="hero-desc">成功避免了物品过期</text>
+        <view class="hero-percentile" wx:if="{{stats.totalUsers > 0}}">
+          <text class="percentile-text">超过了 {{stats.percentile}}% 的用户</text>
+          <view class="percentile-bar">
+            <view class="percentile-fill" style="width: {{stats.percentile}}%"></view>
+          </view>
+        </view>
+        <view class="hero-rank" wx:if="{{stats.totalUsers > 0 && stats.totalSaved > 0}}">
+          <text>全网排名第 {{stats.rank}} / {{stats.totalUsers}}</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 分享按钮 -->
+    <button class="share-btn" open-type="share">
+      <text class="share-icon">📤</text>
+      <text>炫耀我的成就</text>
+    </button>
+
+    <!-- 数据概览 -->
+    <view class="stats-overview">
+      <view class="stat-card">
+        <text class="stat-icon">📦</text>
+        <text class="stat-value">{{stats.totalTracked}}</text>
+        <text class="stat-label">累计追踪</text>
+      </view>
+      <view class="stat-card">
+        <text class="stat-icon">🛡️</text>
+        <text class="stat-value">{{stats.totalSaved}}</text>
+        <text class="stat-label">避免过期</text>
+      </view>
+      <view class="stat-card">
+        <text class="stat-icon">♻️</text>
+        <text class="stat-value">{{saveRate}}%</text>
+        <text class="stat-label">守护率</text>
+      </view>
+    </view>
+
+    <!-- 等级进度 -->
+    <view class="level-section card">
+      <view class="section-header">
+        <text class="section-title">等级进度</text>
+        <text class="section-sub">{{levelInfo.currentName}}</text>
+      </view>
+      <view class="level-progress-bar">
+        <view class="level-progress-fill" style="width: {{levelProgress}}%"></view>
+      </view>
+      <view class="level-progress-info">
+        <text>{{stats.totalSaved}} / {{levelInfo.nextThreshold}}</text>
+        <text wx:if="{{!levelInfo.isMax}}">还差 {{levelInfo.remaining}} 件升至 {{levelInfo.nextName}}</text>
+        <text wx:else>已达到最高等级！</text>
+      </view>
+    </view>
+
+    <!-- 成就徽章 -->
+    <view class="badges-section card">
+      <view class="section-header">
+        <text class="section-title">成就徽章</text>
+        <text class="section-sub">{{earnedBadges}} / {{badges.length}}</text>
+      </view>
+      <view class="badges-grid">
+        <view
+          wx:for="{{badges}}"
+          wx:key="id"
+          class="badge-item {{item.earned ? '' : 'locked'}}"
+        >
+          <text class="badge-icon {{item.earned ? '' : 'badge-icon-locked'}}">{{item.icon}}</text>
+          <text class="badge-name">{{item.name}}</text>
+          <text class="badge-desc">{{item.desc}}</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 鼓励语 -->
+    <view class="encouragement">
+      <text class="encourage-text">{{encourageText}}</text>
+    </view>
+  </block>
+</view>

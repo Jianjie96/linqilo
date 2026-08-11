@@ -1,4 +1,5 @@
 const util = require('../../utils/util.js')
+const syncUtil = require('../../utils/sync.js')
 const app = getApp()
 
 Page({
@@ -147,6 +148,14 @@ Page({
           wx.showLoading({ title: '删除中...' })
           try {
             await app.deleteItem(this.itemId)
+
+            // 记录统计数据：未过期 = 避免过期，已过期 = 已过期
+            if (this.data.daysRemaining >= 0) {
+              syncUtil.recordSave()
+            } else {
+              syncUtil.recordExpired()
+            }
+
             wx.hideLoading()
             wx.showToast({ title: '已删除', icon: 'success' })
             setTimeout(() => wx.navigateBack(), 1500)

@@ -1,4 +1,5 @@
 const util = require('../../utils/util.js')
+const syncUtil = require('../../utils/sync.js')
 const app = getApp()
 
 Page({
@@ -8,7 +9,9 @@ Page({
     isEmpty: false,
     safeCount: 0,
     warningCount: 0,
-    expiredCount: 0
+    expiredCount: 0,
+    achievementText: '',
+    achievementSub: ''
   },
 
   _dataLoaded: false, // 是否已加载过数据
@@ -22,6 +25,7 @@ Page({
       this._dataLoaded = true
       this.refreshItems()
     }
+    this.loadAchievementBanner()
   },
 
   // 从云端拉取并渲染
@@ -94,6 +98,11 @@ Page({
     wx.navigateTo({ url: '/pages/add/add' })
   },
 
+  // 跳转排行榜
+  goLeaderboard() {
+    wx.navigateTo({ url: '/pages/leaderboard/leaderboard' })
+  },
+
   // 跳转设置
   goSettings() {
     wx.navigateTo({ url: '/pages/settings/settings' })
@@ -105,9 +114,40 @@ Page({
     wx.navigateTo({ url: `/pages/detail/detail?id=${id}` })
   },
 
+  // 加载成就横幅文案
+  async loadAchievementBanner() {
+    try {
+      const result = await syncUtil.getLeaderboardStats()
+      const data = result.data
+      if (!data) return
+
+      let text = ''
+      let sub = ''
+      if (data.totalSaved > 0) {
+        text = `已避免 ${data.totalSaved} 件物品过期`
+        if (data.totalUsers > 0 && data.percentile > 0) {
+          sub = `超过 ${data.percentile}% 的用户，点击查看 ›`
+        } else {
+          sub = '点击查看你的成就 ›'
+        }
+      } else if (data.totalTracked > 0) {
+        text = `正在追踪 ${data.totalTracked} 件物品`
+        sub = '及时使用，避免过期 ›'
+      } else {
+        text = '开启你的物品守护之旅'
+        sub = '添加物品，追踪到期日 ›'
+      }
+
+      this.setData({ achievementText: text, achievementSub: sub })
+    } catch (err) {
+      // 云函数未部署时静默失败
+    }
+  },
+
   // 下拉刷新
   async onPullDownRefresh() {
     await this.refreshItems()
+    this.loadAchievementBanner()
     wx.stopPullDownRefresh()
   }
 })

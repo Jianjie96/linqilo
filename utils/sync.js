@@ -67,6 +67,24 @@ async function deleteCloudItem(itemId) {
   await callCloud('items', { action: 'delete', itemId })
 }
 
+// --- 排行榜 / 成就系统 ---
+
+function recordAdd() {
+  return callCloud('leaderboard', { action: 'recordAdd' }).catch(() => {})
+}
+
+function recordSave() {
+  return callCloud('leaderboard', { action: 'recordSave' }).catch(() => {})
+}
+
+function recordExpired() {
+  return callCloud('leaderboard', { action: 'recordExpired' }).catch(() => {})
+}
+
+function getLeaderboardStats() {
+  return callCloud('leaderboard', { action: 'getStats' })
+}
+
 // --- 订阅管理（保留直连数据库，频率低不影响调试） ---
 
 async function updateSubscription(openid, enabled) {
@@ -121,6 +139,10 @@ module.exports = {
   addItemToCloud,
   updateCloudItem,
   deleteCloudItem,
+  recordAdd,
+  recordSave,
+  recordExpired,
+  getLeaderboardStats,
   updateSubscription,
   getSubscriptionStatus
 }
