@@ -6,6 +6,7 @@
 //   _openid: string,
 //   totalTracked: number,   // 累计追踪物品数
 //   totalSaved: number,     // 避免过期的物品数（删除时未过期）
+//   totalSavedValue: number, // 避免过期的物品总价值（真实省钱金额）
 //   totalExpired: number,   // 已过期的物品数（删除时已过期）
 //   updatedAt: string
 // }
@@ -49,6 +50,7 @@ async function getOrCreateStats(openid) {
     _openid: openid,
     totalTracked: 0,
     totalSaved: 0,
+    totalSavedValue: 0,
     totalExpired: 0,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString()
@@ -69,12 +71,13 @@ async function recordAdd(openid) {
   return { code: 0 }
 }
 
-// 记录避免过期（删除时物品未过期）
-async function recordSave(openid) {
+// 记录避免过期（删除时物品未过期 / 标记已省钱），value 为物品价值
+async function recordSave(openid, value) {
   const stats = await getOrCreateStats(openid)
   await db.collection(COLLECTION).doc(stats._id).update({
     data: {
       totalSaved: db.command.inc(1),
+      totalSavedValue: db.command.inc(parseFloat(value) || 0),
       updatedAt: new Date().toISOString()
     }
   })
@@ -116,6 +119,7 @@ async function getStats(openid) {
     data: {
       totalTracked: stats.totalTracked || 0,
       totalSaved: stats.totalSaved || 0,
+      totalSavedValue: stats.totalSavedValue || 0,
       totalExpired: stats.totalExpired || 0,
       percentile,
       rank,

@@ -128,7 +128,7 @@ Page({
         cached.saved = true
         cached.savedAt = new Date().toISOString()
       }
-      syncUtil.recordSave()
+      syncUtil.recordSave(parseFloat(item.value) || 0)
       wx.hideLoading()
       wx.showToast({ title: '🎉 已省钱！', icon: 'success' })
       this.loadItem()
@@ -186,10 +186,10 @@ Page({
           try {
             await app.deleteItem(this.itemId)
 
-            // 记录统计数据：未过期 = 避免过期，已过期 = 已过期
-            if (this.data.daysRemaining >= 0) {
-              syncUtil.recordSave()
-            } else {
+            // 记录统计数据：未省钱且未过期 = 避免过期（已省钱物品标记时已记录，避免重复计数）
+            if (!this.data.item.saved && this.data.daysRemaining >= 0) {
+              syncUtil.recordSave(parseFloat(this.data.item.value) || 0)
+            } else if (!this.data.item.saved) {
               syncUtil.recordExpired()
             }
 

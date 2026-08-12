@@ -96,8 +96,8 @@ function recordAdd() {
   return callCloud('leaderboard', { action: 'recordAdd' }).catch(() => {})
 }
 
-function recordSave() {
-  return callCloud('leaderboard', { action: 'recordSave' }).catch(() => {})
+function recordSave(value) {
+  return callCloud('leaderboard', { action: 'recordSave', value }).catch(() => {})
 }
 
 function recordExpired() {

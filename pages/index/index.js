@@ -328,7 +328,7 @@ Page({
         cached.saved = true
         cached.savedAt = new Date().toISOString()
       }
-      syncUtil.recordSave()
+      syncUtil.recordSave(savedValue)
       wx.hideLoading()
 
       // 卡片闪烁动画
@@ -377,8 +377,8 @@ Page({
       if (!data) return
 
       const totalSaved = data.totalSaved || 0
-      // 每件物品按均价 ¥35 估算节省金额
-      const estimatedSaved = totalSaved * 35
+      // 已省钱物品的真实价值总和（不再按均价估算）
+      const estimatedSaved = data.totalSavedValue || 0
       // 等级计算
       const level = this.calcLevel(totalSaved)
       // 徽章计算
@@ -527,11 +527,11 @@ Page({
         try {
           await app.deleteItem(id)
 
-          // 记录统计数据
+          // 记录统计数据：未省钱且未过期 = 避免过期（已省钱物品标记时已记录，避免重复计数）
           const daysRemaining = item.daysRemaining
-          if (daysRemaining >= 0) {
-            syncUtil.recordSave()
-          } else {
+          if (!item.saved && daysRemaining >= 0) {
+            syncUtil.recordSave(item.value || 0)
+          } else if (!item.saved) {
             syncUtil.recordExpired()
           }
 
