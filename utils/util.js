@@ -364,6 +364,18 @@ function sortItemsByExpiry(items) {
   })
 }
 
+/**
+ * 根据创建时间排序（最新创建在前），同创建时间按到期日期升序
+ */
+function sortItemsByCreatedAt(items) {
+  return [...items].sort((a, b) => {
+    const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0
+    const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0
+    if (timeB !== timeA) return timeB - timeA
+    return new Date(a.expiryDate).getTime() - new Date(b.expiryDate).getTime()
+  })
+}
+
 module.exports = {
   formatDate,
   calcDaysRemaining,
@@ -377,5 +389,6 @@ module.exports = {
   extractShelfLife,
   extractDateInfo,
   calcExpiryFromShelfLife,
-  sortItemsByExpiry
+  sortItemsByExpiry,
+  sortItemsByCreatedAt
 }

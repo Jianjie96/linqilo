@@ -24,7 +24,7 @@
       </view>
       <view class="stat-sep"></view>
       <view class="stat-item stat-value">
-        <text class="stat-num">¥{{totalValue}}</text>
+        <text class="stat-num">¥{{totalValueDisplay}}</text>
         <text class="stat-label">总价值</text>
       </view>
     </view>
@@ -100,7 +100,7 @@
   <view class="item-list" wx:if="{{!isEmpty}}">
     <block wx:for="{{items}}" wx:key="id">
       <view
-        wx:if="{{item._visible && (filterTab === 'all' || (filterTab === 'saved' && item.saved) || (!item.saved && ((filterTab === 'safe' && item.status === 'safe') || (filterTab === 'warning' && (item.status === 'warning' || item.status === 'danger')) || (filterTab === 'expired' && item.status === 'expired')))}}"
+        wx:if="{{item._visible}}"
         class="swipe-wrapper {{item.saved ? 'swipe-wrapper-saved' : ''}} {{_animateCards ? 'card-rise' : ''}}"
         style="{{_animateCards ? 'animation-delay:' + index * 0.06 + 's;' : ''}}"
       >
@@ -138,7 +138,7 @@
 
             <view class="item-footer">
               <text class="item-date">到期：{{item.expiryDate}}</text>
-              <text class="item-note" wx:if="{{item.category}}">{{item.category}}</text>
+              <text class="item-note {{item.categoryClass}}" wx:if="{{item.category}}">{{item.category}}</text>
             </view>
 
             <!-- 进度条 -->

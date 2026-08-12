@@ -31,7 +31,7 @@ exports.main = async (event, context) => {
   }
 }
 
-// 分页获取物品（按到期日期升序，配合 createdAt 保证分页稳定）
+// 分页获取物品（创建时间倒序在前，同创建时间按到期日期升序，保证分页稳定）
 async function getItems(openid, skip = 0, limit = 100) {
   const where = { _openid: openid }
 
@@ -39,8 +39,8 @@ async function getItems(openid, skip = 0, limit = 100) {
     db.collection(COLLECTION).where(where).count(),
     db.collection(COLLECTION)
       .where(where)
+      .orderBy('createdAt', 'desc')
       .orderBy('expiryDate', 'asc')
-      .orderBy('createdAt', 'asc')
       .skip(skip)
       .limit(limit)
       .get()

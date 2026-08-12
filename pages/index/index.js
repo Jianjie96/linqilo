@@ -6,6 +6,15 @@ const shareMixin = require('../../utils/share.js')
 // 每屏渲染的物品数量（上拉加载更多）
 const PAGE_SIZE = 20
 
+// 分类 → 标签颜色 class 映射（与 add 页 categories 对应）
+const CATEGORY_CLASS_MAP = {
+  '食品': 'cat-food',
+  '药品': 'cat-med',
+  '化妆品': 'cat-cosmetic',
+  '日用品': 'cat-daily',
+  '其他': 'cat-other'
+}
+
 Page({
   ...shareMixin,
   data: {
@@ -22,6 +31,8 @@ Page({
     expiredCount: 0,
     savedCount: 0,
     savedValue: 0,
+    totalValue: 0,
+    totalValueDisplay: 0, // 总价值 count-up 动画展示值
     showBingo: false,
     bingoAmount: 0,
     bingoItemName: '',
@@ -84,8 +95,47 @@ Page({
         savedValue: stats.savedValue || 0,
         totalValue: stats.totalValue || 0
       })
+      this._animateTotalValue(stats.totalValue || 0)
     } catch (err) {
       console.error('加载统计失败:', err)
+    }
+  },
+
+  // 总价值 count-up 数字滚动动画（easeOutCubic 缓动）
+  _animateTotalValue(target) {
+    const from = this.data.totalValueDisplay || 0
+    if (from === target) {
+      this.setData({ totalValueDisplay: target })
+      return
+    }
+    if (this._totalValueTimer) clearTimeout(this._totalValueTimer)
+
+    const duration = 800
+    const startTime = Date.now()
+
+    const step = () => {
+      const elapsed = Date.now() - startTime
+      const progress = Math.min(elapsed / duration, 1)
+      // easeOutCubic：先快后慢
+      const eased = 1 - Math.pow(1 - progress, 3)
+      const current = Math.round(from + (target - from) * eased)
+
+      if (progress >= 1) {
+        this.setData({ totalValueDisplay: target })
+        this._totalValueTimer = null
+        return
+      }
+      this.setData({ totalValueDisplay: current })
+      this._totalValueTimer = setTimeout(step, 16)
+    }
+    step()
+  },
+
+  onHide() {
+    // 页面隐藏时停止动画，避免无意义的 setData
+    if (this._totalValueTimer) {
+      clearTimeout(this._totalValueTimer)
+      this._totalValueTimer = null
     }
   },
 
@@ -106,12 +156,13 @@ Page({
         status,
         countdownText,
         statusText,
-        expiryDateFormatted: item.expiryDate
+        expiryDateFormatted: item.expiryDate,
+        categoryClass: CATEGORY_CLASS_MAP[item.category] || 'cat-other'
       }
     })
 
-    // 按到期日期排序
-    const sorted = util.sortItemsByExpiry(items)
+    // 按创建时间排序（最新在前），同创建时间按到期日期升序
+    const sorted = util.sortItemsByCreatedAt(items)
 
     // 分页：计算当前 tab 下的可见列表并打标记
     const visible = this._computeVisible(sorted, this.data.filterTab, this.data.visibleCount)
