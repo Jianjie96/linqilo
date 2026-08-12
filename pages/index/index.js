@@ -3,12 +3,20 @@ const syncUtil = require('../../utils/sync.js')
 const app = getApp()
 const shareMixin = require('../../utils/share.js')
 
+// 每屏渲染的物品数量（上拉加载更多）
+const PAGE_SIZE = 20
+
 Page({
   ...shareMixin,
   data: {
     items: [],
     filterTab: 'all', // all | safe | warning | expired | saved
     isEmpty: false,
+    visibleCount: PAGE_SIZE,
+    hasMore: true,
+    loadingMore: false,
+    listLoadedAll: false,
+    listTotal: 0,
     safeCount: 0,
     warningCount: 0,
     expiredCount: 0,
@@ -34,6 +42,7 @@ Page({
     if (this._dataLoaded) {
       // 从子页面返回：缓存已是最新（add/detail 直接修改了 globalData），只需重新渲染 UI
       this._renderItems()
+      this._loadStats()
     } else {
       // 首次进入：从云端拉取
       this._dataLoaded = true
@@ -42,11 +51,42 @@ Page({
     this.loadAchievementBanner()
   },
 
-  // 从云端拉取并渲染
+  // 从云端拉取第一页并渲染
   async refreshItems() {
     this.setData({ loading: true })
-    await app.loadItems()
-    this._renderItems(true)
+    try {
+      const [{ items: pageItems, total }] = await Promise.all([
+        syncUtil.fetchItemsPage(0, PAGE_SIZE),
+        this._loadStats()
+      ])
+
+      app.globalData.items = pageItems
+      this.setData({
+        visibleCount: PAGE_SIZE,
+        hasMore: pageItems.length < total
+      })
+      this._renderItems(true)
+    } catch (err) {
+      console.error('加载失败:', err)
+      this.setData({ loading: false })
+    }
+  },
+
+  // 拉取云端全量统计（分页模式下本地数据是子集，统计必须来自云端）
+  async _loadStats() {
+    try {
+      const stats = await syncUtil.fetchItemStats()
+      this.setData({
+        safeCount: stats.safe || 0,
+        warningCount: stats.warning || 0,
+        expiredCount: stats.expired || 0,
+        savedCount: stats.savedCount || 0,
+        savedValue: stats.savedValue || 0,
+        totalValue: stats.totalValue || 0
+      })
+    } catch (err) {
+      console.error('加载统计失败:', err)
+    }
   },
 
   // 仅从缓存渲染（不发网络请求）
@@ -73,28 +113,14 @@ Page({
     // 按到期日期排序
     const sorted = util.sortItemsByExpiry(items)
 
-    // 统计各状态数量
-    const safeCount = sorted.filter(i => i.status === 'safe').length
-    const warningCount = sorted.filter(i => i.status === 'warning' || i.status === 'danger').length
-    const expiredCount = sorted.filter(i => i.status === 'expired').length
-
-    // 计算总价值
-    const totalValue = sorted.reduce((sum, item) => sum + (parseFloat(item.value) || 0), 0)
-
-    // 统计已省钱
-    const savedItems = sorted.filter(i => i.saved)
-    const savedCount = savedItems.length
-    const savedValue = savedItems.reduce((sum, item) => sum + (parseFloat(item.value) || 0), 0)
+    // 分页：计算当前 tab 下的可见列表并打标记
+    const visible = this._computeVisible(sorted, this.data.filterTab, this.data.visibleCount)
 
     this.setData({
-      items: sorted,
+      items: visible.markedItems,
       isEmpty: sorted.length === 0,
-      safeCount,
-      warningCount,
-      expiredCount,
-      savedCount,
-      savedValue,
-      totalValue,
+      listLoadedAll: visible.loadedAll,
+      listTotal: visible.total,
       _animateCards: animate,
       loading: false
     })
@@ -110,13 +136,13 @@ Page({
   // 切换筛选
   onFilterTab(e) {
     const tab = e.currentTarget.dataset.tab
-    this.setData({ filterTab: tab })
+    this.setData({ filterTab: tab, visibleCount: PAGE_SIZE })
+    this._refreshDisplay()
   },
 
-  // 获取筛选后的列表
-  getFilteredItems() {
-    const { items, filterTab } = this.data
-    switch (filterTab) {
+  // 按 tab 过滤物品
+  _filterByTab(items, tab) {
+    switch (tab) {
       case 'safe':
         return items.filter(i => !i.saved && i.status === 'safe')
       case 'warning':
@@ -128,6 +154,85 @@ Page({
       default:
         return items
     }
+  },
+
+  // 计算分页可见列表：过滤 + 截断 + 打 _visible 标记
+  _computeVisible(items, tab, count) {
+    const filtered = this._filterByTab(items, tab)
+    const visibleIds = new Set(filtered.slice(0, count).map(i => i.id))
+    return {
+      markedItems: items.map(i => ({ ...i, _visible: visibleIds.has(i.id) })),
+      // 当前过滤列表已全部展示，且云端已无更多数据
+      loadedAll: filtered.length <= count && !this.data.hasMore,
+      total: filtered.length
+    }
+  },
+
+  // 刷新可见列表（切换 tab / 上拉加载更多时调用）
+  _refreshDisplay() {
+    const { items, filterTab, visibleCount } = this.data
+    const visible = this._computeVisible(items, filterTab, visibleCount)
+    this.setData({
+      items: visible.markedItems,
+      listLoadedAll: visible.loadedAll,
+      listTotal: visible.total
+    })
+  },
+
+  // 上拉触底：先展开已拉取数据，再向云端拉下一页
+  onReachBottom() {
+    if (this.data.loading || this.data.loadingMore || this.data.isEmpty) return
+
+    const { items, filterTab, visibleCount, hasMore } = this.data
+    const filtered = this._filterByTab(items, filterTab)
+
+    // 已拉取的数据还没展示完：纯前端展开
+    if (visibleCount < filtered.length) {
+      this.setData({ visibleCount: visibleCount + PAGE_SIZE })
+      this._refreshDisplay()
+      return
+    }
+
+    // 云端还有更多：拉下一页
+    if (hasMore) this._loadMore()
+  },
+
+  // 从云端加载下一页
+  async _loadMore() {
+    this.setData({ loadingMore: true })
+    try {
+      const { items: pageItems, total } = await syncUtil.fetchItemsPage(
+        app.globalData.items.length,
+        PAGE_SIZE
+      )
+
+      // 合并去重后写回缓存
+      const merged = [...app.globalData.items]
+      const seen = new Set(merged.map(i => i.id))
+      for (const it of pageItems) {
+        if (!seen.has(it.id)) {
+          merged.push(it)
+          seen.add(it.id)
+        }
+      }
+      app.globalData.items = merged
+
+      this.setData({
+        visibleCount: this.data.visibleCount + PAGE_SIZE,
+        hasMore: merged.length < total
+      })
+      this._renderItems()
+    } catch (err) {
+      console.error('加载更多失败:', err)
+      wx.showToast({ title: '加载失败，请重试', icon: 'none' })
+    } finally {
+      this.setData({ loadingMore: false })
+    }
+  },
+
+  // 获取筛选后的列表
+  getFilteredItems() {
+    return this._filterByTab(this.data.items, this.data.filterTab)
   },
 
   // 跳转添加
@@ -184,6 +289,7 @@ Page({
       // 300ms 后刷新列表 + 显示庆祝弹层
       setTimeout(() => {
         this._renderItems()
+        this._loadStats()
         this.setData({
           showBingo: true,
           bingoAmount: savedValue,
@@ -380,6 +486,7 @@ Page({
           wx.hideLoading()
           wx.showToast({ title: '已删除', icon: 'success' })
           this._renderItems()
+          this._loadStats()
           this.loadAchievementBanner()
         } catch (err) {
           wx.hideLoading()

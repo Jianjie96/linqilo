@@ -97,10 +97,10 @@
   </view>
 
   <!-- 物品列表 -->
-  <scroll-view scroll-y class="item-list" wx:if="{{!isEmpty}}">
+  <view class="item-list" wx:if="{{!isEmpty}}">
     <block wx:for="{{items}}" wx:key="id">
       <view
-        wx:if="{{filterTab === 'all' || (filterTab === 'saved' && item.saved) || (!item.saved && ((filterTab === 'safe' && item.status === 'safe') || (filterTab === 'warning' && (item.status === 'warning' || item.status === 'danger')) || (filterTab === 'expired' && item.status === 'expired')))}}"
+        wx:if="{{item._visible && (filterTab === 'all' || (filterTab === 'saved' && item.saved) || (!item.saved && ((filterTab === 'safe' && item.status === 'safe') || (filterTab === 'warning' && (item.status === 'warning' || item.status === 'danger')) || (filterTab === 'expired' && item.status === 'expired')))}}"
         class="swipe-wrapper {{item.saved ? 'swipe-wrapper-saved' : ''}} {{_animateCards ? 'card-rise' : ''}}"
         style="{{_animateCards ? 'animation-delay:' + index * 0.06 + 's;' : ''}}"
       >
@@ -168,7 +168,14 @@
         </view>
       </view>
     </block>
-  </scroll-view>
+
+    <!-- 分页加载提示 -->
+    <view class="list-footer" wx:if="{{listTotal > 0}}">
+      <text wx:if="{{loadingMore}}">加载中...</text>
+      <text wx:elif="{{listLoadedAll}}">已显示全部 {{listTotal}} 件</text>
+      <text wx:else>上拉加载更多</text>
+    </view>
+  </view>
 
   <!-- 空状态 -->
   <view class="empty-state" wx:if="{{isEmpty}}">

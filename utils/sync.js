@@ -40,9 +40,9 @@ function getOpenid() {
 
 // --- 物品 CRUD ---
 
-async function fetchAllItems() {
-  const result = await callCloud('items', { action: 'get' })
-  return (result.data || []).map(doc => ({
+// 云端文档 → 前端物品对象
+function normalizeItem(doc) {
+  return {
     _id: doc._id,
     id: doc.id,
     name: doc.name,
@@ -54,7 +54,27 @@ async function fetchAllItems() {
     saved: doc.saved || false,
     savedAt: doc.savedAt || '',
     createdAt: doc.createdAt || ''
-  }))
+  }
+}
+
+async function fetchAllItems() {
+  const result = await callCloud('items', { action: 'get', skip: 0, limit: 1000 })
+  return (result.data || []).map(normalizeItem)
+}
+
+// 分页拉取物品：返回 { items, total }
+async function fetchItemsPage(skip = 0, limit = 20) {
+  const result = await callCloud('items', { action: 'get', skip, limit })
+  return {
+    items: (result.data || []).map(normalizeItem),
+    total: result.total || 0
+  }
+}
+
+// 拉取全量统计摘要（安全/临期/已过期/已省钱计数与价值）
+async function fetchItemStats() {
+  const result = await callCloud('items', { action: 'stats' })
+  return result.data || {}
 }
 
 async function addItemToCloud(item) {
@@ -139,6 +159,8 @@ async function getSubscriptionStatus(openid) {
 module.exports = {
   getOpenid,
   fetchAllItems,
+  fetchItemsPage,
+  fetchItemStats,
   addItemToCloud,
   updateCloudItem,
   deleteCloudItem,

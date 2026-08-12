@@ -1,6 +1,10 @@
+/* 防止横向溢出（放在 page 上，避免祖先 overflow 破坏 sticky） */
+page {
+  overflow-x: hidden;
+}
+
 .page-index {
   padding-bottom: 160rpx;
-  overflow-x: hidden;
   width: 100%;
   box-sizing: border-box;
 }
@@ -235,11 +239,17 @@
   color: #07C160;
 }
 
-/* 筛选标签 */
+/* 筛选标签 — sticky 吸顶，类似 web sticky 效果 */
 .filter-bar {
+  position: -webkit-sticky;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: #F5F5F5;
   display: flex;
   gap: 16rpx;
-  margin-bottom: 20rpx;
+  margin: 0 -30rpx 20rpx;
+  padding: 8rpx 30rpx;
 }
 
 .filter-tag {
@@ -593,9 +603,16 @@
   color: #999;
 }
 
-/* 物品列表 */
+/* 物品列表（随页面整体滚动，不单独滚动） */
 .item-list {
-  height: calc(100vh - 500rpx);
+}
+
+/* 分页加载提示 */
+.list-footer {
+  text-align: center;
+  padding: 30rpx 0 10rpx;
+  font-size: 24rpx;
+  color: #999;
 }
 
 /* 空状态浮动动画 */
