@@ -25,7 +25,7 @@ exports.main = async (event, context) => {
       case 'recordAdd':
         return await recordAdd(openid)
       case 'recordSave':
-        return await recordSave(openid)
+        return await recordSave(openid, event.value)
       case 'recordExpired':
         return await recordExpired(openid)
       case 'getStats':
