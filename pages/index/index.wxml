@@ -148,12 +148,12 @@
 
             <!-- 临期价值提醒 → 可点击省钱 -->
             <view class="value-reminder value-reminder-action" wx:if="{{!item.saved && item.value > 0 && (item.status === 'warning' || item.status === 'danger')}}" catchtap="onSaveItem" data-id="{{item.id}}">
-              <text class="value-reminder-text">已用掉，省 ¥{{item.value}}</text>
+              <text class="value-reminder-text">标记完成，省 ¥{{item.value}}</text>
             </view>
 
             <!-- 安全期物品的省钱按钮 -->
             <view class="value-reminder value-reminder-action value-reminder-safe" wx:if="{{!item.saved && item.value > 0 && item.status === 'safe'}}" catchtap="onSaveItem" data-id="{{item.id}}">
-              <text class="value-reminder-text">已用掉，省 ¥{{item.value}}</text>
+              <text class="value-reminder-text">标记完成，省 ¥{{item.value}}</text>
             </view>
             <!-- 已省钱庆祝标识 -->
             <view class="value-reminder value-reminder-saved" wx:if="{{item.saved}}">

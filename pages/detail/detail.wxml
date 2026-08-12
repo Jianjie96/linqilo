@@ -76,7 +76,7 @@
 
     <!-- 操作按钮 -->
     <view class="action-buttons">
-      <button class="btn-save" bindtap="onSaveItem" wx:if="{{!item.saved && status !== 'expired' && item.value > 0}}">已用掉，省 ¥{{item.value}}</button>
+      <button class="btn-save" bindtap="onSaveItem" wx:if="{{!item.saved && status !== 'expired' && item.value > 0}}">标记完成，省 ¥{{item.value}}</button>
       <button class="btn-primary" bindtap="startEdit">编辑</button>
       <button class="btn-danger" bindtap="deleteItem">删除</button>
       <button class="btn-secondary" open-type="share">分享给好友</button>
