@@ -126,7 +126,7 @@
 
             <!-- 已省钱状态 -->
             <view class="countdown-row" wx:if="{{item.saved}}">
-              <text class="countdown-saved-text">于 {{item.savedAt}} 使用</text>
+              <text class="countdown-saved-text">于 {{item.savedAtText}} 使用</text>
               <text class="item-value-tag saved-value-tag" wx:if="{{item.value > 0}}">省 ¥{{item.value}}</text>
             </view>
 

@@ -157,6 +157,7 @@ Page({
         countdownText,
         statusText,
         expiryDateFormatted: item.expiryDate,
+        savedAtText: item.savedAt ? util.formatDate(item.savedAt) : '',
         categoryClass: CATEGORY_CLASS_MAP[item.category] || 'cat-other'
       }
     })
