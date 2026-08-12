@@ -1,4 +1,5 @@
 const cloud = require('wx-server-sdk')
+const https = require('https')
 
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 
@@ -16,7 +17,8 @@ const _ = db.command
  * 使用前提：
  *   1. 在微信公众平台「订阅消息」中选用模板并获取 templateId
  *   2. 将 templateId 填入下方 TEMPLATE_ID 常量
- *   3. 用户已在小程序中点击「开启通知」完成订阅授权
+ *   3. 在云函数环境变量中设置 WX_APPSECRET（小程序密钥）
+ *   4. 用户已在小程序中点击「开启通知」完成订阅授权
  */
 
 // ⚠️ 请替换为你在微信公众平台申请的订阅消息模板 ID
@@ -26,12 +28,118 @@ const _ = db.command
 //   thing3  - 备注
 const TEMPLATE_ID = '68FxhLOgJgDwUZWFOZFunglKqFWCsHPq3vSwsKI9YPY'
 
+const APPID = 'wx742667049b5e316a'
+
 // 默认提前提醒天数
 const DEFAULT_ALERT_DAYS = 1
 
 // ⚠️ 测试模式：true 时跳过物品查询，直接向所有已订阅用户发送测试通知
 // 测试完成后请改回 false，并将 cron 时间改回 "0 0 8 * * * *"
 const TEST_MODE = true
+
+// --- access_token 缓存 ---
+let cachedToken = null
+let tokenExpireTime = 0
+
+/**
+ * 获取微信 access_token（带内存缓存，提前 5 分钟刷新）
+ */
+function getWxAccessToken() {
+  return new Promise((resolve, reject) => {
+    const now = Date.now()
+    if (cachedToken && now < tokenExpireTime - 5 * 60 * 1000) {
+      return resolve(cachedToken)
+    }
+
+    const APPSECRET = process.env.WX_APPSECRET
+    if (!APPSECRET) {
+      return reject(new Error('请在云函数环境变量中设置 WX_APPSECRET'))
+    }
+
+    const url = `https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid=${APPID}&secret=${APPSECRET}`
+
+    https.get(url, (res) => {
+      let data = ''
+      res.on('data', chunk => { data += chunk })
+      res.on('end', () => {
+        try {
+          const result = JSON.parse(data)
+          if (result.errcode && result.errcode !== 0) {
+            reject(new Error(`获取 access_token 错误: ${result.errmsg} (errcode=${result.errcode})`))
+            return
+          }
+          if (result.access_token) {
+            cachedToken = result.access_token
+            tokenExpireTime = now + (result.expires_in || 7200) * 1000
+            console.log(`access_token 已刷新，有效期至 ${new Date(tokenExpireTime).toISOString()}`)
+            resolve(cachedToken)
+          } else {
+            reject(new Error(`获取 access_token 返回数据异常: ${data}`))
+          }
+        } catch (e) {
+          reject(new Error(`解析 access_token 响应失败: ${e.message}`))
+        }
+      })
+    }).on('error', (err) => {
+      reject(new Error(`请求 access_token 网络失败: ${err.message}`))
+    })
+  })
+}
+
+/**
+ * 发送订阅消息（直接调用微信 REST API，不依赖 cloud.openapi）
+ * 参数与 cloud.openapi.subscribeMessage.send() 保持一致
+ */
+function sendSubscribeMessage({ touser, templateId, page, data }) {
+  return getWxAccessToken().then(accessToken => {
+    const postData = JSON.stringify({
+      touser,
+      template_id: templateId,
+      page: page || '',
+      miniprogram_state: 'formal',
+      data,
+      lang: 'zh_CN'
+    })
+
+    const options = {
+      hostname: 'api.weixin.qq.com',
+      path: `/cgi-bin/message/subscribe/send?access_token=${accessToken}`,
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Content-Length': Buffer.byteLength(postData)
+      }
+    }
+
+    return new Promise((resolve, reject) => {
+      const req = https.request(options, (res) => {
+        let body = ''
+        res.on('data', chunk => { body += chunk })
+        res.on('end', () => {
+          try {
+            const result = JSON.parse(body)
+            if (result.errcode === 0) {
+              resolve(result)
+            } else {
+              const err = new Error(result.errmsg || '微信 API 调用失败')
+              err.errCode = result.errcode
+              reject(err)
+            }
+          } catch (e) {
+            reject(new Error(`解析发送结果失败: ${e.message}`))
+          }
+        })
+      })
+
+      req.on('error', (err) => {
+        reject(new Error(`发送订阅消息网络失败: ${err.message}`))
+      })
+
+      req.write(postData)
+      req.end()
+    })
+  })
+}
 
 exports.main = async (event, context) => {
   if (TEST_MODE) {
@@ -129,7 +237,7 @@ exports.main = async (event, context) => {
       }
 
       try {
-        await cloud.openapi.subscribeMessage.send({
+        await sendSubscribeMessage({
           touser: openid,
           templateId: TEMPLATE_ID,
           page: '/pages/index/index',
@@ -189,7 +297,7 @@ async function testNotify() {
 
     for (const sub of subscribedUsers) {
       try {
-        await cloud.openapi.subscribeMessage.send({
+        await sendSubscribeMessage({
           touser: sub.openid,
           templateId: TEMPLATE_ID,
           page: '/pages/index/index',
@@ -203,8 +311,8 @@ async function testNotify() {
       } catch (err) {
         console.error(`发送失败 openid=${sub.openid}`, JSON.stringify({
           errCode: err.errCode,
-          errMsg: err.errMsg || err.message,
-          detail: err
+          errMsg: err.message,
+          detail: err.message
         }))
         errors.push({ openid: sub.openid, error: err.errCode || err.message })
       }
