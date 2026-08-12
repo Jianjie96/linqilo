@@ -196,26 +196,26 @@ Page({
     const fs = wx.getFileSystemManager()
     const filePath = `${wx.env.USER_DATA_PATH}/dingdong-export-${dateStr}.txt`
 
-    fs.writeFile({
+    // 同步写入文件，保证 shareFileMessage 在用户点击的调用栈内触发
+    try {
+      fs.writeFileSync(filePath, text, 'utf8')
+    } catch (err) {
+      console.error('写入文件失败:', err)
+      wx.showToast({ title: '生成文件失败', icon: 'none' })
+      return
+    }
+
+    wx.shareFileMessage({
       filePath,
-      data: text,
-      encoding: 'utf8',
+      fileName: `叮咚到期数据_${dateStr}.txt`,
       success: () => {
-        wx.shareFileMessage({
-          filePath,
-          fileName: `叮咚到期数据_${dateStr}.txt`,
-          success: () => {
-            wx.showToast({ title: '已生成文件，请选择发送对象', icon: 'none' })
-          },
-          fail: (err) => {
-            console.error('分享文件失败:', err)
-            wx.showToast({ title: '分享失败，请重试', icon: 'none' })
-          }
-        })
+        wx.showToast({ title: '已生成文件，请选择发送对象', icon: 'none' })
       },
       fail: (err) => {
-        console.error('写入文件失败:', err)
-        wx.showToast({ title: '生成文件失败', icon: 'none' })
+        console.error('分享文件失败:', err)
+        // 用户主动取消分享不算失败
+        if (err.errMsg && err.errMsg.includes('cancel')) return
+        wx.showToast({ title: '分享失败，请重试', icon: 'none' })
       }
     })
   },
