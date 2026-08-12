@@ -1,4 +1,5 @@
 const syncUtil = require('../../utils/sync.js')
+const shareMixin = require('../../utils/share.js')
 
 // 等级定义
 const LEVELS = [
@@ -31,6 +32,7 @@ const ENCOURAGES = {
 }
 
 Page({
+  ...shareMixin,
   data: {
     loading: true,
     stats: {

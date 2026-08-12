@@ -1,8 +1,10 @@
 const util = require('../../utils/util.js')
 const syncUtil = require('../../utils/sync.js')
 const app = getApp()
+const shareMixin = require('../../utils/share.js')
 
 Page({
+  ...shareMixin,
   data: {
     items: [],
     filterTab: 'all', // all | safe | warning | expired | saved

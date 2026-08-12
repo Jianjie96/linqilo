@@ -1,7 +1,9 @@
 const app = getApp()
 const syncUtil = require('../../utils/sync.js')
+const shareMixin = require('../../utils/share.js')
 
 Page({
+  ...shareMixin,
   data: {
     totalItems: 0,
     isSubscribed: false,
