@@ -25,7 +25,6 @@ Page({
 
   onLoad(options) {
     this.setData({
-      alertDays: app.globalData.settings.alertDays,
       cloudEnabled: !!wx.cloud
     })
     if (wx.cloud) {

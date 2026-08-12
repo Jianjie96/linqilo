@@ -34,69 +34,6 @@
     </block>
   </view>
 
-  <!-- 默认临期提醒 -->
-  <view class="section-title">临期提醒设置</view>
-  <view class="card">
-    <view class="settings-desc">
-      物品到期前多少天标记为「临期」状态
-    </view>
-
-    <view class="alert-options">
-      <view
-        class="alert-option {{alertDays === 1 ? 'active' : ''}}"
-        bindtap="onAlertDaysChange"
-        data-value="1"
-      >
-        <text class="option-num">1</text>
-        <text class="option-text">天</text>
-      </view>
-      <view
-        class="alert-option {{alertDays === 3 ? 'active' : ''}}"
-        bindtap="onAlertDaysChange"
-        data-value="3"
-      >
-        <text class="option-num">3</text>
-        <text class="option-text">天</text>
-      </view>
-      <view
-        class="alert-option {{alertDays === 7 ? 'active' : ''}}"
-        bindtap="onAlertDaysChange"
-        data-value="7"
-      >
-        <text class="option-num">7</text>
-        <text class="option-text">天</text>
-      </view>
-      <view
-        class="alert-option {{alertDays === 14 ? 'active' : ''}}"
-        bindtap="onAlertDaysChange"
-        data-value="14"
-      >
-        <text class="option-num">14</text>
-        <text class="option-text">天</text>
-      </view>
-      <view
-        class="alert-option {{alertDays === 30 ? 'active' : ''}}"
-        bindtap="onAlertDaysChange"
-        data-value="30"
-      >
-        <text class="option-num">30</text>
-        <text class="option-text">天</text>
-      </view>
-    </view>
-
-    <view class="custom-input-row">
-      <text class="custom-label">自定义天数：</text>
-      <input
-        class="custom-input"
-        type="number"
-        value="{{alertDays}}"
-        bindblur="onCustomAlertDays"
-        placeholder="输入天数"
-      />
-      <text class="custom-unit">天</text>
-    </view>
-  </view>
-
   <!-- 数据管理 -->
   <view class="section-title">数据管理</view>
   <view class="card">
