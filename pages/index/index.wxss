@@ -158,6 +158,21 @@
 .stat-warning .stat-num { color: #FF9500; }
 .stat-expired .stat-num { color: #999; }
 
+.stat-sep {
+  width: 1rpx;
+  height: 48rpx;
+  background: #E8E8E8;
+}
+
+.stat-value .stat-num {
+  color: #333;
+  font-size: 36rpx;
+}
+
+.stat-saved-stat .stat-num {
+  color: #07C160;
+}
+
 /* 筛选标签 */
 .filter-bar {
   display: flex;
@@ -188,6 +203,16 @@
   background: #fff;
 }
 
+.card-saving-flash {
+  animation: savingFlash 0.3s ease;
+}
+
+@keyframes savingFlash {
+  0% { box-shadow: 0 0 0 0 rgba(7, 193, 96, 0.6); }
+  50% { box-shadow: 0 0 0 20rpx rgba(7, 193, 96, 0.15); }
+  100% { box-shadow: 0 0 0 0 rgba(7, 193, 96, 0); }
+}
+
 .item-inner {
   padding: 30rpx;
 }
@@ -205,21 +230,27 @@
   margin-bottom: 0;
 }
 
-.swipe-delete-btn {
+.swipe-save-btn {
   position: absolute;
   right: 0;
   top: 0;
   bottom: 0;
   width: 120rpx;
-  background: #FF3B30;
+  background: linear-gradient(135deg, #07C160, #06AD56);
   display: flex;
   align-items: center;
   justify-content: center;
   color: #fff;
   font-size: 28rpx;
-  font-weight: 500;
+  font-weight: 600;
   border-radius: 0 20rpx 20rpx 0;
   z-index: 0;
+  animation: savePulse 2s ease-in-out infinite;
+}
+
+@keyframes savePulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.75; }
 }
 
 .swipe-hint {
@@ -252,6 +283,11 @@
   white-space: nowrap;
 }
 
+.item-name-saved {
+  text-decoration: line-through;
+  color: #999;
+}
+
 .item-status {
   font-size: 24rpx;
   padding: 4rpx 16rpx;
@@ -275,16 +311,45 @@
 
 .status-expired {
   background: rgba(153, 153, 153, 0.1);
+  color: #999;
+}
+
+.status-saved {
+  background: rgba(7, 193, 96, 0.12);
+  color: #07C160;
 }
 
 /* 倒计时 */
 .countdown-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   margin-bottom: 16rpx;
 }
 
 .countdown-text {
   font-size: 36rpx;
   font-weight: 700;
+}
+
+.item-value-tag {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #07C160;
+  background: rgba(7, 193, 96, 0.08);
+  padding: 6rpx 16rpx;
+  border-radius: 8rpx;
+}
+
+.saved-value-tag {
+  color: #07C160;
+  background: rgba(7, 193, 96, 0.12);
+  font-weight: 700;
+}
+
+.countdown-saved-text {
+  font-size: 24rpx;
+  color: #999;
 }
 
 /* 底部信息 */
@@ -326,6 +391,56 @@
 .progress-warning { background: #FF9500; }
 .progress-danger { background: #FF3B30; }
 .progress-expired { background: #CCC; }
+
+/* 临期价值提醒 — 可点击省钱 */
+.value-reminder {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  margin-top: 16rpx;
+  padding: 12rpx 16rpx;
+  border-radius: 10rpx;
+}
+
+.value-reminder-icon {
+  font-size: 24rpx;
+}
+
+.value-reminder-text {
+  font-size: 22rpx;
+  font-weight: 500;
+}
+
+.value-reminder-action {
+  background: linear-gradient(135deg, rgba(255, 149, 0, 0.1), rgba(255, 149, 0, 0.04));
+  border: 2rpx solid rgba(255, 149, 0, 0.15);
+}
+
+.value-reminder-action .value-reminder-text {
+  color: #FF9500;
+}
+
+.value-reminder-safe {
+  background: linear-gradient(135deg, rgba(7, 193, 96, 0.06), rgba(7, 193, 96, 0.02));
+  border: 2rpx solid rgba(7, 193, 96, 0.1);
+}
+
+.value-reminder-safe .value-reminder-text {
+  color: #07C160;
+}
+
+.value-reminder-saved {
+  background: linear-gradient(135deg, rgba(7, 193, 96, 0.08), rgba(7, 193, 96, 0.02));
+}
+
+.value-reminder-saved .value-reminder-text {
+  color: #07C160;
+}
+
+/* 已省钱卡片 */
+.swipe-wrapper-saved {
+  opacity: 0.8;
+}
 
 /* ===== 底部操作栏 ===== */
 .bottom-bar {
@@ -396,4 +511,101 @@
 /* 物品列表 */
 .item-list {
   height: calc(100vh - 500rpx);
+}
+
+/* ===== 🎉 Bingo 庆祝弹层 ===== */
+.bingo-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+  animation: bingoFadeIn 0.3s ease;
+}
+
+@keyframes bingoFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.bingo-card {
+  background: #fff;
+  border-radius: 32rpx;
+  padding: 64rpx 56rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  animation: bingoBounce 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes bingoBounce {
+  from {
+    transform: scale(0.3);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.bingo-emoji {
+  font-size: 96rpx;
+  animation: bingoEmoji 0.6s ease 0.2s both;
+}
+
+@keyframes bingoEmoji {
+  from {
+    transform: scale(0) rotate(-20deg);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1) rotate(0deg);
+    opacity: 1;
+  }
+}
+
+.bingo-title {
+  font-size: 28rpx;
+  color: #999;
+  margin-top: 16rpx;
+  animation: bingoFadeUp 0.4s ease 0.4s both;
+}
+
+.bingo-amount {
+  font-size: 72rpx;
+  font-weight: 200;
+  color: #07C160;
+  margin-top: 12rpx;
+  animation: bingoFadeUp 0.4s ease 0.5s both;
+}
+
+.bingo-item {
+  font-size: 26rpx;
+  color: #333;
+  margin-top: 8rpx;
+  animation: bingoFadeUp 0.4s ease 0.6s both;
+}
+
+.bingo-tap {
+  font-size: 22rpx;
+  color: #ccc;
+  margin-top: 32rpx;
+  animation: bingoFadeUp 0.4s ease 0.7s both;
+}
+
+@keyframes bingoFadeUp {
+  from {
+    transform: translateY(20rpx);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }

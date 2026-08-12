@@ -50,6 +50,9 @@ async function fetchAllItems() {
     productionDate: doc.productionDate || '',
     alertDays: doc.alertDays || 1,
     category: doc.category || '',
+    value: doc.value || 0,
+    saved: doc.saved || false,
+    savedAt: doc.savedAt || '',
     createdAt: doc.createdAt || ''
   }))
 }

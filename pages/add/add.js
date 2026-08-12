@@ -8,6 +8,7 @@ Page({
     productionDate: '',
     expiryDate: '',
     shelfLife: '',
+    value: '',
     category: '',
     alertDays: 1,
     customAlertDays: '',
@@ -53,6 +54,11 @@ Page({
   // 输入物品名称
   onNameInput(e) {
     this.setData({ name: e.detail.value })
+  },
+
+  // 输入价值
+  onValueInput(e) {
+    this.setData({ value: e.detail.value })
   },
 
   // 选择生产日期
@@ -302,7 +308,8 @@ Page({
       productionDate,
       expiryDate,
       category: this.data.categories[categoryIndex],
-      alertDays
+      alertDays,
+      value: parseFloat(this.data.value) || 0
     }
 
     wx.showLoading({ title: '保存中...' })

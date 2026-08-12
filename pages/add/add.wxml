@@ -85,6 +85,19 @@
       </picker>
     </view>
 
+    <!-- 价值（¥） -->
+    <view class="form-group">
+      <text class="form-label">价值（¥）</text>
+      <input
+        class="form-input"
+        type="digit"
+        value="{{value}}"
+        bindinput="onValueInput"
+        placeholder="物品的大致价值，用于统计节省金额"
+        maxlength="10"
+      />
+    </view>
+
     <!-- 生产日期 -->
     <view class="form-group">
       <text class="form-label">生产日期</text>

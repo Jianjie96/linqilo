@@ -5,11 +5,16 @@ const app = getApp()
 Page({
   data: {
     items: [],
-    filterTab: 'all', // all | safe | warning | expired
+    filterTab: 'all', // all | safe | warning | expired | saved
     isEmpty: false,
     safeCount: 0,
     warningCount: 0,
     expiredCount: 0,
+    savedCount: 0,
+    savedValue: 0,
+    showBingo: false,
+    bingoAmount: 0,
+    bingoItemName: '',
     achievementText: '',
     achievementSub: '',
     levelMark: 'I',
@@ -68,12 +73,23 @@ Page({
     const warningCount = sorted.filter(i => i.status === 'warning' || i.status === 'danger').length
     const expiredCount = sorted.filter(i => i.status === 'expired').length
 
+    // 计算总价值
+    const totalValue = sorted.reduce((sum, item) => sum + (parseFloat(item.value) || 0), 0)
+
+    // 统计已省钱
+    const savedItems = sorted.filter(i => i.saved)
+    const savedCount = savedItems.length
+    const savedValue = savedItems.reduce((sum, item) => sum + (parseFloat(item.value) || 0), 0)
+
     this.setData({
       items: sorted,
       isEmpty: sorted.length === 0,
       safeCount,
       warningCount,
-      expiredCount
+      expiredCount,
+      savedCount,
+      savedValue,
+      totalValue
     })
   },
 
@@ -88,11 +104,13 @@ Page({
     const { items, filterTab } = this.data
     switch (filterTab) {
       case 'safe':
-        return items.filter(i => i.status === 'safe')
+        return items.filter(i => !i.saved && i.status === 'safe')
       case 'warning':
-        return items.filter(i => i.status === 'warning' || i.status === 'danger')
+        return items.filter(i => !i.saved && (i.status === 'warning' || i.status === 'danger'))
       case 'expired':
-        return items.filter(i => i.status === 'expired')
+        return items.filter(i => !i.saved && i.status === 'expired')
+      case 'saved':
+        return items.filter(i => i.saved)
       default:
         return items
     }
@@ -117,6 +135,66 @@ Page({
   goDetail(e) {
     const id = e.currentTarget.dataset.id
     wx.navigateTo({ url: `/pages/detail/detail?id=${id}` })
+  },
+
+  // 标记已省钱（Bingo 时刻）
+  async onSaveItem(e) {
+    const id = e.currentTarget.dataset.id
+    const item = this.data.items.find(i => i.id === id)
+    if (!item || item.saved || item.status === 'expired') return
+
+    const savedValue = parseFloat(item.value) || 0
+
+    wx.showLoading({ title: '标记中...' })
+    try {
+      await app.updateItem(id, {
+        saved: true,
+        savedAt: new Date().toISOString()
+      })
+      // 同步更新 globalData 缓存
+      const cached = app.globalData.items.find(i => i.id === id)
+      if (cached) {
+        cached.saved = true
+        cached.savedAt = new Date().toISOString()
+      }
+      syncUtil.recordSave()
+      wx.hideLoading()
+
+      // 卡片闪烁动画
+      const items = this.data.items.map(i => {
+        if (i.id === id) return { ...i, _savingFlash: true }
+        return i
+      })
+      this.setData({ items })
+
+      // 300ms 后刷新列表 + 显示庆祝弹层
+      setTimeout(() => {
+        this._renderItems()
+        this.setData({
+          showBingo: true,
+          bingoAmount: savedValue,
+          bingoItemName: item.name
+        })
+      }, 300)
+
+      // 2.5 秒后自动关闭
+      this._bingoTimer = setTimeout(() => {
+        this.dismissBingo()
+      }, 2500)
+    } catch (err) {
+      wx.hideLoading()
+      console.error('标记省钱失败:', err)
+      wx.showToast({ title: '操作失败，请重试', icon: 'none' })
+    }
+  },
+
+  // 关闭庆祝弹层
+  dismissBingo() {
+    if (this._bingoTimer) {
+      clearTimeout(this._bingoTimer)
+      this._bingoTimer = null
+    }
+    this.setData({ showBingo: false })
   },
 
   // 加载成就横幅文案

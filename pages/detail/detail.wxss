@@ -22,6 +22,7 @@
 .header-warning::before { background: #FF9500; }
 .header-danger::before { background: #FF3B30; }
 .header-expired::before { background: #CCC; }
+.header-saved::before { background: #07C160; }
 
 .header-content {
   display: flex;
@@ -35,6 +36,11 @@
   font-size: 40rpx;
   font-weight: 700;
   color: #333;
+}
+
+.detail-name-saved {
+  text-decoration: line-through;
+  color: #999;
 }
 
 .detail-category {
@@ -124,6 +130,11 @@
   font-weight: 500;
 }
 
+.info-value-highlight {
+  color: #07C160;
+  font-weight: 600;
+}
+
 /* 操作按钮 */
 .action-buttons {
   padding: 30rpx 0 60rpx;
@@ -144,6 +155,22 @@
 }
 
 .btn-danger::after {
+  border: none;
+}
+
+.btn-save {
+  background: linear-gradient(135deg, #07C160, #06AD56);
+  color: #fff;
+  border-radius: 16rpx;
+  padding: 24rpx 0;
+  text-align: center;
+  font-size: 32rpx;
+  font-weight: 600;
+  border: none;
+  box-shadow: 0 6rpx 20rpx rgba(7, 193, 96, 0.35);
+}
+
+.btn-save::after {
   border: none;
 }
 

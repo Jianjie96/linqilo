@@ -18,6 +18,15 @@
         <text class="stat-num">{{expiredCount}}</text>
         <text class="stat-label">已过期</text>
       </view>
+      <view class="stat-item stat-saved-stat">
+        <text class="stat-num">{{savedCount}}</text>
+        <text class="stat-label">已省钱</text>
+      </view>
+      <view class="stat-sep"></view>
+      <view class="stat-item stat-value">
+        <text class="stat-num">¥{{totalValue}}</text>
+        <text class="stat-label">总价值</text>
+      </view>
     </view>
   </view>
 
@@ -55,23 +64,24 @@
     <view class="filter-tag {{filterTab === 'safe' ? 'active' : ''}}" bindtap="onFilterTab" data-tab="safe">安全</view>
     <view class="filter-tag {{filterTab === 'warning' ? 'active' : ''}}" bindtap="onFilterTab" data-tab="warning">临期</view>
     <view class="filter-tag {{filterTab === 'expired' ? 'active' : ''}}" bindtap="onFilterTab" data-tab="expired">已过期</view>
+    <view class="filter-tag {{filterTab === 'saved' ? 'active' : ''}}" bindtap="onFilterTab" data-tab="saved">已省钱</view>
   </view>
 
   <!-- 物品列表 -->
   <scroll-view scroll-y class="item-list" wx:if="{{!isEmpty}}">
     <block wx:for="{{items}}" wx:key="id">
       <view
-        wx:if="{{filterTab === 'all' || (filterTab === 'safe' && item.status === 'safe') || (filterTab === 'warning' && (item.status === 'warning' || item.status === 'danger')) || (filterTab === 'expired' && item.status === 'expired')}}"
-        class="swipe-wrapper"
+        wx:if="{{filterTab === 'all' || (filterTab === 'saved' && item.saved) || (!item.saved && ((filterTab === 'safe' && item.status === 'safe') || (filterTab === 'warning' && (item.status === 'warning' || item.status === 'danger')) || (filterTab === 'expired' && item.status === 'expired')))}}"
+        class="swipe-wrapper {{item.saved ? 'swipe-wrapper-saved' : ''}}"
       >
-        <!-- 背后的删除按钮 -->
-        <view class="swipe-delete-btn" data-id="{{item.id}}" catchtap="onDeleteItem">
-          <text>删除</text>
+        <!-- 背后的省钱按钮 -->
+        <view class="swipe-save-btn" wx:if="{{!item.saved}}" data-id="{{item.id}}" catchtap="onSaveItem">
+          <text>完成</text>
         </view>
 
         <!-- 物品卡片（可左滑） -->
         <view
-          class="item-card card {{item.swiped ? 'swiped' : ''}}"
+          class="item-card card {{item.swiped ? 'swiped' : ''}} {{item._savingFlash ? 'card-saving-flash' : ''}}"
           style="transform: translateX({{item._swipeX || 0}}rpx); transition: {{item._swiping ? 'none' : 'transform 0.3s'}};"
           bindtouchstart="onTouchStart"
           bindtouchmove="onTouchMove"
@@ -80,13 +90,20 @@
         >
           <view class="item-inner" bindtap="goDetail" data-id="{{item.id}}">
             <view class="item-header">
-              <view class="item-name">{{item.name}}</view>
-              <view class="item-status status-{{item.status}}">{{item.statusText}}</view>
+              <view class="item-name {{item.saved ? 'item-name-saved' : ''}}">{{item.name}}</view>
+              <view class="item-status status-{{item.saved ? 'saved' : item.status}}">{{item.saved ? '已省钱' : item.statusText}}</view>
             </view>
 
-            <!-- 倒计时 -->
-            <view class="countdown-row">
+            <!-- 已省钱状态 -->
+            <view class="countdown-row" wx:if="{{item.saved}}">
+              <text class="countdown-saved-text">于 {{item.savedAt}} 使用</text>
+              <text class="item-value-tag saved-value-tag" wx:if="{{item.value > 0}}">省 ¥{{item.value}}</text>
+            </view>
+
+            <!-- 倒计时（未省钱） -->
+            <view class="countdown-row" wx:if="{{!item.saved}}">
               <text class="countdown-text status-{{item.status}}">{{item.countdownText}}</text>
+              <text class="item-value-tag" wx:if="{{item.value > 0}}">¥{{item.value}}</text>
             </view>
 
             <view class="item-footer">
@@ -98,10 +115,25 @@
             <view class="progress-bar">
               <view class="progress-fill progress-{{item.status}}" style="width: {{item.status === 'expired' ? '100' : (item.daysRemaining > 30 ? '10' : (item.daysRemaining > 7 ? '40' : (item.daysRemaining > 0 ? '70' : '100')))}}%"></view>
             </view>
+
+            <!-- 临期价值提醒 → 可点击省钱 -->
+            <view class="value-reminder value-reminder-action" wx:if="{{!item.saved && item.value > 0 && (item.status === 'warning' || item.status === 'danger')}}" catchtap="onSaveItem" data-id="{{item.id}}">
+              <text class="value-reminder-text">已用掉，省 ¥{{item.value}}</text>
+            </view>
+
+            <!-- 安全期物品的省钱按钮 -->
+            <view class="value-reminder value-reminder-action value-reminder-safe" wx:if="{{!item.saved && item.value > 0 && item.status === 'safe'}}" catchtap="onSaveItem" data-id="{{item.id}}">
+              <text class="value-reminder-text">已用掉，省 ¥{{item.value}}</text>
+            </view>
+            <!-- 已省钱庆祝标识 -->
+            <view class="value-reminder value-reminder-saved" wx:if="{{item.saved}}">
+              <text class="value-reminder-icon">🎉</text>
+              <text class="value-reminder-text">已省钱 ¥{{item.value}}</text>
+            </view>
           </view>
-          <!-- 左滑提示 -->
-          <view class="swipe-hint" wx:if="{{!item._swipeX || item._swipeX === 0}}">
-            <text class="swipe-hint-text">左滑删除</text>
+          <!-- 左滑提示（未省钱时显示） -->
+          <view class="swipe-hint" wx:if="{{!item.saved && (!item._swipeX || item._swipeX === 0)}}">
+            <text class="swipe-hint-text">左滑完成</text>
           </view>
         </view>
       </view>
@@ -115,6 +147,17 @@
     <text class="empty-text">点击下方按钮添加你的第一个物品吧</text>
   </view>
 
+  </view>
+
+  <!-- 🎉 Bingo 庆祝弹层 -->
+  <view class="bingo-overlay" wx:if="{{showBingo}}" bindtap="dismissBingo">
+    <view class="bingo-card">
+      <text class="bingo-emoji">🎉</text>
+      <text class="bingo-title">省下了</text>
+      <text class="bingo-amount">¥{{bingoAmount}}</text>
+      <text class="bingo-item">{{bingoItemName}}</text>
+      <text class="bingo-tap">点击任意处关闭</text>
+    </view>
   </view>
 
   <!-- 底部操作栏 -->

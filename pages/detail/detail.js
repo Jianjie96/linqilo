@@ -14,7 +14,8 @@ Page({
     editName: '',
     editExpiryDate: '',
     editProductionDate: '',
-    editAlertDays: 1
+    editAlertDays: 1,
+    editValue: ''
   },
 
   onLoad(options) {
@@ -74,7 +75,8 @@ Page({
       editName: item.name,
       editExpiryDate: item.expiryDate,
       editProductionDate: item.productionDate || '',
-      editAlertDays: item.alertDays || app.globalData.settings.alertDays
+      editAlertDays: item.alertDays || app.globalData.settings.alertDays,
+      editValue: String(item.value > 0 ? item.value : '')
     })
   },
 
@@ -103,9 +105,41 @@ Page({
     this.setData({ editAlertDays: parseInt(e.currentTarget.dataset.value) })
   },
 
+  // 编辑价值
+  onEditValueInput(e) {
+    this.setData({ editValue: e.detail.value })
+  },
+
+  // 标记已省钱
+  async onSaveItem() {
+    const { item } = this.data
+    if (!item || item.saved || this.data.status === 'expired') return
+
+    wx.showLoading({ title: '标记中...' })
+    try {
+      await app.updateItem(this.itemId, {
+        saved: true,
+        savedAt: new Date().toISOString()
+      })
+      const cached = app.globalData.items.find(i => i.id === this.itemId)
+      if (cached) {
+        cached.saved = true
+        cached.savedAt = new Date().toISOString()
+      }
+      syncUtil.recordSave()
+      wx.hideLoading()
+      wx.showToast({ title: '🎉 已省钱！', icon: 'success' })
+      this.loadItem()
+    } catch (err) {
+      wx.hideLoading()
+      console.error('标记省钱失败:', err)
+      wx.showToast({ title: '操作失败，请重试', icon: 'none' })
+    }
+  },
+
   // 保存编辑
   async saveEdit() {
-    const { editName, editExpiryDate, editProductionDate, editAlertDays } = this.data
+    const { editName, editExpiryDate, editProductionDate, editAlertDays, editValue } = this.data
 
     if (!editName.trim()) {
       wx.showToast({ title: '名称不能为空', icon: 'none' })
@@ -123,7 +157,8 @@ Page({
         name: editName.trim(),
         expiryDate: editExpiryDate,
         productionDate: editProductionDate,
-        alertDays: editAlertDays
+        alertDays: editAlertDays,
+        value: parseFloat(editValue) || 0
       })
       wx.hideLoading()
       this.setData({ isEditing: false })

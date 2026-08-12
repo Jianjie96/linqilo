@@ -2,14 +2,20 @@
   <!-- 查看模式 -->
   <block wx:if="{{!isEditing}}">
     <!-- 状态头部 -->
-    <view class="detail-header header-{{status}}">
+    <view class="detail-header header-{{item.saved ? 'saved' : status}}">
       <view class="header-content">
-        <text class="detail-name">{{item.name}}</text>
+        <text class="detail-name {{item.saved ? 'detail-name-saved' : ''}}">{{item.name}}</text>
         <text class="detail-category" wx:if="{{item.category}}">{{item.category}}</text>
       </view>
 
+      <!-- 已省钱状态 -->
+      <view class="big-countdown" wx:if="{{item.saved}}">
+        <text class="countdown-number status-saved">🎉</text>
+        <text class="countdown-unit status-saved">已省钱</text>
+      </view>
+
       <!-- 大倒计时 -->
-      <view class="big-countdown">
+      <view class="big-countdown" wx:if="{{!item.saved}}">
         <text class="countdown-number status-{{status}}">
           <block wx:if="{{daysRemaining < 0}}">{{daysRemaining * -1}}</block>
           <block wx:elif="{{daysRemaining === 0}}">0</block>
@@ -58,6 +64,10 @@
         <text class="info-label">临期提醒</text>
         <text class="info-value">提前 {{item.alertDays || 1}} 天</text>
       </view>
+      <view class="info-row" wx:if="{{item.value > 0}}">
+        <text class="info-label">价值</text>
+        <text class="info-value info-value-highlight">¥{{item.value}}</text>
+      </view>
       <view class="info-row" wx:if="{{item.createdAt}}">
         <text class="info-label">添加时间</text>
         <text class="info-value">{{item.createdAtFormatted}}</text>
@@ -66,6 +76,7 @@
 
     <!-- 操作按钮 -->
     <view class="action-buttons">
+      <button class="btn-save" bindtap="onSaveItem" wx:if="{{!item.saved && status !== 'expired' && item.value > 0}}">已用掉，省 ¥{{item.value}}</button>
       <button class="btn-primary" bindtap="startEdit">编辑</button>
       <button class="btn-danger" bindtap="deleteItem">删除</button>
       <button class="btn-secondary" open-type="share">分享给好友</button>
@@ -114,6 +125,18 @@
             {{day}}天
           </view>
         </view>
+      </view>
+
+      <view class="form-group">
+        <text class="form-label">价值（¥）</text>
+        <input
+          class="form-input"
+          type="digit"
+          value="{{editValue}}"
+          bindinput="onEditValueInput"
+          placeholder="物品的大致价值"
+          maxlength="10"
+        />
       </view>
     </view>
 
