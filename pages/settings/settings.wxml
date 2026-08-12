@@ -18,10 +18,8 @@
           <text class="status-text">通知已开启</text>
         </view>
         <view class="notify-actions-row">
-          <text class="link-btn" bindtap="manualSync">
-            {{isSyncing ? '同步中...' : '🔄 立即同步数据'}}
-          </text>
-          <text class="link-btn link-danger" bindtap="unsubscribeNotification">关闭通知</text>
+          <button class="notify-btn notify-btn-primary" disabled="{{isSyncing}}" bindtap="manualSync">{{isSyncing ? '同步中...' : '立即同步数据'}}</button>
+          <button class="notify-btn notify-btn-danger" bindtap="unsubscribeNotification">关闭通知</button>
         </view>
       </view>
     </block>

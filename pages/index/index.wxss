@@ -638,6 +638,8 @@
 }
 
 .bingo-card {
+  width: 520rpx;
+  box-sizing: border-box;
   background: #fff;
   border-radius: 32rpx;
   padding: 64rpx 56rpx;
@@ -693,6 +695,9 @@
   font-size: 26rpx;
   color: #333;
   margin-top: 8rpx;
+  max-width: 100%;
+  text-align: center;
+  word-break: break-all;
   animation: bingoFadeUp 0.4s ease 0.6s both;
 }
 

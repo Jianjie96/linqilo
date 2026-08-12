@@ -49,17 +49,40 @@
 
 .notify-actions-row {
   display: flex;
-  gap: 24rpx;
+  gap: 20rpx;
 }
 
-.link-btn {
-  font-size: 26rpx;
-  color: #07C160;
-  padding: 8rpx 0;
+.notify-btn {
+  flex: 1;
+  height: 72rpx;
+  line-height: 72rpx;
+  padding: 0;
+  margin: 0;
+  border-radius: 14rpx;
+  text-align: center;
+  font-size: 28rpx;
+  font-weight: 500;
+  box-sizing: border-box;
 }
 
-.link-danger {
+.notify-btn::after {
+  border: none;
+}
+
+.notify-btn-primary {
+  background-color: #07C160;
+  color: #fff;
+}
+
+.notify-btn-primary[disabled] {
+  background-color: #9BE4BF;
+  color: #fff;
+}
+
+.notify-btn-danger {
+  background-color: #fff;
   color: #FF3B30;
+  border: 2rpx solid #FF3B30;
 }
 
 .notify-disabled {
