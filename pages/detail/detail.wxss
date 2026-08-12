@@ -159,19 +159,101 @@
 }
 
 .btn-save {
-  background: linear-gradient(135deg, #07C160, #06AD56);
-  color: #fff;
-  border-radius: 16rpx;
-  padding: 24rpx 0;
-  text-align: center;
-  font-size: 32rpx;
-  font-weight: 600;
+  position: relative;
+  align-self: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12rpx;
   border: none;
-  box-shadow: 0 6rpx 20rpx rgba(7, 193, 96, 0.35);
+  border-radius: 48rpx;
+  padding: 28rpx 64rpx;
+  line-height: 1.4;
+  text-align: center;
+  overflow: hidden;
+  flex-wrap: nowrap;
+  background: linear-gradient(135deg, #2E2518 0%, #4A3F2B 40%, #6B552E 75%, #4A3F2B 100%);
+  box-shadow:
+    0 6rpx 20rpx rgba(28, 23, 18, 0.4),
+    0 0 24rpx rgba(212, 175, 55, 0.22),
+    inset 0 2rpx 0 rgba(255, 255, 255, 0.12);
+  animation: btnSaveGlow 2.5s ease-in-out infinite;
 }
 
+/* 光泽扫过动画 + 清除 button 默认边框 */
 .btn-save::after {
   border: none;
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -70%;
+  width: 45%;
+  height: 100%;
+  background: linear-gradient(120deg, transparent 0%, rgba(255, 255, 255, 0.14) 50%, transparent 100%);
+  transform: skewX(-20deg);
+  animation: btnSaveSheen 3.2s ease-in-out infinite;
+}
+
+.btn-save-icon {
+  display: block;
+  flex-shrink: 0;
+  white-space: nowrap;
+  font-size: 28rpx;
+  color: #F6D98D;
+}
+
+.btn-save-label {
+  display: block;
+  flex-shrink: 0;
+  white-space: nowrap;
+  font-size: 32rpx;
+  font-weight: 700;
+  letter-spacing: 2rpx;
+  color: #F6D98D;
+  background: linear-gradient(180deg, #FBE9BE 0%, #F6D98D 45%, #D4AF37 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
+.btn-save-value {
+  flex-shrink: 0;
+  white-space: nowrap;
+  max-width: 240rpx;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 24rpx;
+  font-weight: 700;
+  color: #F6D98D;
+  background: linear-gradient(135deg, rgba(246, 217, 141, 0.16), rgba(212, 175, 55, 0.08));
+  border: 2rpx solid rgba(246, 217, 141, 0.45);
+  border-radius: 30rpx;
+  padding: 6rpx 20rpx;
+  letter-spacing: 1rpx;
+}
+
+.btn-save-hover {
+  transform: scale(0.97);
+  filter: brightness(1.12);
+}
+
+@keyframes btnSaveGlow {
+  0%, 100% {
+    box-shadow:
+      0 6rpx 20rpx rgba(28, 23, 18, 0.4),
+      0 0 24rpx rgba(212, 175, 55, 0.22),
+      inset 0 2rpx 0 rgba(255, 255, 255, 0.12);
+  }
+  50% {
+    box-shadow:
+      0 8rpx 26rpx rgba(28, 23, 18, 0.45),
+      0 0 44rpx rgba(212, 175, 55, 0.42),
+      inset 0 2rpx 0 rgba(255, 255, 255, 0.12);
+  }
+}
+
+@keyframes btnSaveSheen {
+  0% { left: -70%; }
+  55%, 100% { left: 130%; }
 }
 
 /* 编辑表单 */
