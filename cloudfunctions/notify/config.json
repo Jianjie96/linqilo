@@ -3,7 +3,7 @@
     {
       "name": "dailyNotify",
       "type": "timer",
-      "config": "0 30 14 * * * *"
+      "config": "0 0 8 * * * *"
     }
   ]
 }

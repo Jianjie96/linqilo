@@ -35,7 +35,7 @@ const DEFAULT_ALERT_DAYS = 1
 
 // ⚠️ 测试模式：true 时跳过物品查询，直接向所有已订阅用户发送测试通知
 // 测试完成后请改回 false，并将 cron 时间改回 "0 0 8 * * * *"
-const TEST_MODE = true
+const TEST_MODE = false
 
 // --- access_token 缓存 ---
 let cachedToken = null
