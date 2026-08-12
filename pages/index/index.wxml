@@ -30,7 +30,36 @@
     </view>
   </view>
 
-  <view class="index-content">
+  <!-- 加载中 -->
+  <view class="loading-block" wx:if="{{loading}}">
+    <view class="loading-skeleton">
+      <view class="sk-card sk-card-dark">
+        <view class="sk-line sk-line-short"></view>
+        <view class="sk-line sk-line-mid"></view>
+        <view class="sk-line sk-line-long"></view>
+      </view>
+      <view class="sk-card">
+        <view class="sk-line sk-line-title"></view>
+        <view class="sk-line sk-line-mid"></view>
+        <view class="sk-line sk-line-long"></view>
+        <view class="sk-line sk-line-full"></view>
+      </view>
+      <view class="sk-card">
+        <view class="sk-line sk-line-title"></view>
+        <view class="sk-line sk-line-mid"></view>
+        <view class="sk-line sk-line-long"></view>
+        <view class="sk-line sk-line-full"></view>
+      </view>
+      <view class="sk-card">
+        <view class="sk-line sk-line-title"></view>
+        <view class="sk-line sk-line-mid"></view>
+        <view class="sk-line sk-line-long"></view>
+        <view class="sk-line sk-line-full"></view>
+      </view>
+    </view>
+  </view>
+
+  <view class="index-content" wx:else>
   <!-- 成就卡片 -->
   <view class="ac-card" bindtap="goLeaderboard" wx:if="{{achievementText}}">
     <view class="ac-card-glow"></view>
@@ -72,20 +101,21 @@
     <block wx:for="{{items}}" wx:key="id">
       <view
         wx:if="{{filterTab === 'all' || (filterTab === 'saved' && item.saved) || (!item.saved && ((filterTab === 'safe' && item.status === 'safe') || (filterTab === 'warning' && (item.status === 'warning' || item.status === 'danger')) || (filterTab === 'expired' && item.status === 'expired')))}}"
-        class="swipe-wrapper {{item.saved ? 'swipe-wrapper-saved' : ''}}"
+        class="swipe-wrapper {{item.saved ? 'swipe-wrapper-saved' : ''}} {{_animateCards ? 'card-rise' : ''}}"
+        style="{{_animateCards ? 'animation-delay:' + index * 0.06 + 's;' : ''}}"
       >
         <!-- 背后的省钱按钮 -->
         <view class="swipe-save-btn" wx:if="{{!item.saved}}" data-id="{{item.id}}" catchtap="onSaveItem">
           <text>完成</text>
         </view>
 
-        <!-- 物品卡片（可左滑） -->
+        <!-- 物品卡片（已省钱不可左滑） -->
         <view
           class="item-card card {{item.swiped ? 'swiped' : ''}} {{item._savingFlash ? 'card-saving-flash' : ''}}"
           style="transform: translateX({{item._swipeX || 0}}rpx); transition: {{item._swiping ? 'none' : 'transform 0.3s'}};"
-          bindtouchstart="onTouchStart"
-          bindtouchmove="onTouchMove"
-          bindtouchend="onTouchEnd"
+          bindtouchstart="{{item.saved ? '' : 'onTouchStart'}}"
+          bindtouchmove="{{item.saved ? '' : 'onTouchMove'}}"
+          bindtouchend="{{item.saved ? '' : 'onTouchEnd'}}"
           data-id="{{item.id}}"
         >
           <view class="item-inner" bindtap="goDetail" data-id="{{item.id}}">

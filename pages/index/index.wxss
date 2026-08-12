@@ -9,6 +9,56 @@
   padding: 0 30rpx;
 }
 
+/* ===== 加载骨架屏 ===== */
+.loading-block {
+  padding: 0 30rpx;
+}
+
+.loading-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 20rpx;
+}
+
+.sk-card {
+  background: #fff;
+  border-radius: 20rpx;
+  padding: 30rpx;
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx;
+}
+
+.sk-card-dark {
+  background: #161618;
+  padding: 28rpx;
+  gap: 14rpx;
+}
+
+.sk-line {
+  height: 16rpx;
+  border-radius: 8rpx;
+  background: linear-gradient(90deg, #EEEEEE 25%, #F5F5F5 50%, #EEEEEE 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+.sk-card-dark .sk-line {
+  background: linear-gradient(90deg, rgba(255,255,255,0.06) 25%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0.06) 75%);
+  background-size: 200% 100%;
+}
+
+.sk-line-short { width: 30%; }
+.sk-line-mid { width: 55%; }
+.sk-line-long { width: 75%; }
+.sk-line-full { width: 100%; }
+.sk-line-title { width: 45%; height: 20rpx; }
+
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
 /* 统计栏 */
 .stats-bar {
   display: flex;
@@ -20,6 +70,12 @@
   box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.04);
   width: 100%;
   box-sizing: border-box;
+  animation: statsSlideDown 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+@keyframes statsSlideDown {
+  from { opacity: 0; transform: translateY(-24rpx); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .stats-content {
@@ -47,6 +103,12 @@
   background: radial-gradient(ellipse, rgba(7, 193, 96, 0.18) 0%, transparent 70%);
   filter: blur(20px);
   pointer-events: none;
+  animation: glowPulse 3s ease-in-out infinite;
+}
+
+@keyframes glowPulse {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
 }
 
 .ac-card-body {
@@ -187,12 +249,19 @@
   background: #fff;
   color: #666;
   border: 2rpx solid #E8E8E8;
+  transition: all 0.2s ease;
 }
 
 .filter-tag.active {
   background: #07C160;
   color: #fff;
   border-color: #07C160;
+  animation: filterPop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes filterPop {
+  from { transform: scale(0.85); }
+  to { transform: scale(1); }
 }
 
 /* 物品卡片 */
@@ -224,6 +293,16 @@
   border-radius: 20rpx;
   overflow: hidden;
   background: #F5F5F5;
+}
+
+/* 卡片入场动画 */
+.card-rise {
+  animation: cardRise 0.45s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+}
+
+@keyframes cardRise {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
 }
 
 .swipe-wrapper .item-card {
@@ -473,6 +552,12 @@
   font-weight: 600;
   box-shadow: 0 8rpx 28rpx rgba(7, 193, 96, 0.45);
   border: none;
+  animation: fabBreathe 3s ease-in-out infinite;
+}
+
+@keyframes fabBreathe {
+  0%, 100% { transform: scale(1); box-shadow: 0 8rpx 28rpx rgba(7, 193, 96, 0.45); }
+  50% { transform: scale(1.04); box-shadow: 0 12rpx 36rpx rgba(7, 193, 96, 0.55); }
 }
 
 .fab-pill::after {
@@ -511,6 +596,25 @@
 /* 物品列表 */
 .item-list {
   height: calc(100vh - 500rpx);
+}
+
+/* 空状态浮动动画 */
+.empty-state {
+  animation: emptyFloat 2.5s ease-in-out infinite;
+}
+
+@keyframes emptyFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-16rpx); }
+}
+
+.empty-icon {
+  animation: emptyIconBounce 2.5s ease-in-out infinite;
+}
+
+@keyframes emptyIconBounce {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
 }
 
 /* ===== 🎉 Bingo 庆祝弹层 ===== */

@@ -148,19 +148,12 @@ exports.main = async (event, context) => {
 
   const today = new Date()
   today.setHours(0, 0, 0, 0)
-
-  // 计算提醒日期范围：今天 ~ 今天+N天 内到期的物品
-  const maxAlertDays = 30 // 最大提前提醒天数
-  const futureDate = new Date(today)
-  futureDate.setDate(futureDate.getDate() + maxAlertDays)
-
   const todayStr = formatDate(today)
-  const futureStr = formatDate(futureDate)
 
   try {
-    // 1. 查询所有临期物品（到期日在今天到未来30天之间）
+    // 1. 查询所有未过期的物品（到期日 >= 今天），不设上限，由每件物品自身的 alertDays 决定是否临期
     const itemsRes = await db.collection('items').where({
-      expiryDate: _.gte(todayStr).and(_.lte(futureStr))
+      expiryDate: _.gte(todayStr)
     }).limit(500).get()
 
     const items = itemsRes.data || []

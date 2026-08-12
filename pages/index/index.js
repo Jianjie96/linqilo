@@ -21,7 +21,9 @@ Page({
     levelName: '新手守护者',
     totalSaved: 0,
     estimatedSaved: 0,
-    earnedBadges: 0
+    earnedBadges: 0,
+    _animateCards: false,
+    loading: true
   },
 
   _dataLoaded: false, // 是否已加载过数据
@@ -40,12 +42,13 @@ Page({
 
   // 从云端拉取并渲染
   async refreshItems() {
+    this.setData({ loading: true })
     await app.loadItems()
-    this._renderItems()
+    this._renderItems(true)
   },
 
   // 仅从缓存渲染（不发网络请求）
-  _renderItems() {
+  _renderItems(animate = false) {
     const rawItems = app.globalData.items
     const alertDays = app.globalData.settings.alertDays
 
@@ -89,8 +92,17 @@ Page({
       expiredCount,
       savedCount,
       savedValue,
-      totalValue
+      totalValue,
+      _animateCards: animate,
+      loading: false
     })
+
+    // 动画播放一段时间后重置标志，避免后续 setData 重复触发
+    if (animate) {
+      setTimeout(() => {
+        this.setData({ _animateCards: false })
+      }, 1500)
+    }
   },
 
   // 切换筛选
@@ -281,6 +293,9 @@ Page({
 
   onTouchStart(e) {
     const id = e.currentTarget.dataset.id
+    // 已省钱物品不可左滑
+    const item = this.data.items.find(i => i.id === id)
+    if (!item || item.saved) return
     this._touchStartX = e.touches[0].clientX
     this._touchStartY = e.touches[0].clientY
     this._swipeTargetId = id
