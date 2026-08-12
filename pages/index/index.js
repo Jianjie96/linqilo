@@ -12,7 +12,7 @@ Page({
     expiredCount: 0,
     achievementText: '',
     achievementSub: '',
-    levelIcon: '🌱',
+    levelMark: 'I',
     levelName: '新手守护者',
     totalSaved: 0,
     estimatedSaved: 0,
@@ -155,7 +155,7 @@ Page({
       this.setData({
         achievementText: text,
         achievementSub: sub,
-        levelIcon: level.icon,
+        levelMark: level.mark,
         levelName: level.name,
         totalSaved,
         estimatedSaved,
@@ -169,11 +169,11 @@ Page({
   // 等级计算（与 leaderboard 保持一致）
   calcLevel(totalSaved) {
     const LEVELS = [
-      { min: 0, max: 4, icon: '🌱', name: '新手守护者' },
-      { min: 5, max: 19, icon: '🛡️', name: '过期终结者' },
-      { min: 20, max: 49, icon: '⚡', name: '防腐达人' },
-      { min: 50, max: 99, icon: '🏆', name: '节约大师' },
-      { min: 100, max: Infinity, icon: '👑', name: '零浪费传奇' }
+      { min: 0, max: 4, mark: 'I', name: '新手守护者' },
+      { min: 5, max: 19, mark: 'II', name: '过期终结者' },
+      { min: 20, max: 49, mark: 'III', name: '防腐达人' },
+      { min: 50, max: 99, mark: 'IV', name: '节约大师' },
+      { min: 100, max: Infinity, mark: 'V', name: '零浪费传奇' }
     ]
     for (let i = LEVELS.length - 1; i >= 0; i--) {
       if (totalSaved >= LEVELS[i].min) return LEVELS[i]

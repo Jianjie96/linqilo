@@ -2,23 +2,23 @@ const syncUtil = require('../../utils/sync.js')
 
 // 等级定义
 const LEVELS = [
-  { min: 0, max: 4, icon: '🌱', name: '新手守护者', nextName: '过期终结者' },
-  { min: 5, max: 19, icon: '🛡️', name: '过期终结者', nextName: '防腐达人' },
-  { min: 20, max: 49, icon: '⚡', name: '防腐达人', nextName: '节约大师' },
-  { min: 50, max: 99, icon: '🏆', name: '节约大师', nextName: '零浪费传奇' },
-  { min: 100, max: Infinity, icon: '👑', name: '零浪费传奇', nextName: '' }
+  { min: 0, max: 4, mark: 'I', name: '新手守护者', nextName: '过期终结者' },
+  { min: 5, max: 19, mark: 'II', name: '过期终结者', nextName: '防腐达人' },
+  { min: 20, max: 49, mark: 'III', name: '防腐达人', nextName: '节约大师' },
+  { min: 50, max: 99, mark: 'IV', name: '节约大师', nextName: '零浪费传奇' },
+  { min: 100, max: Infinity, mark: 'V', name: '零浪费传奇', nextName: '' }
 ]
 
 // 徽章定义
 const BADGE_DEFS = [
-  { id: 'first_save', icon: '🛡️', name: '初次守护', desc: '首次避免物品过期', threshold: { type: 'totalSaved', value: 1 } },
-  { id: 'tracker_10', icon: '📦', name: '管理达人', desc: '追踪10件物品', threshold: { type: 'totalTracked', value: 10 } },
-  { id: 'save_10', icon: '⭐', name: '节约之星', desc: '避免10件过期', threshold: { type: 'totalSaved', value: 10 } },
-  { id: 'tracker_50', icon: '🎯', name: '精准管理', desc: '追踪50件物品', threshold: { type: 'totalTracked', value: 50 } },
-  { id: 'save_50', icon: '💎', name: '零浪费先锋', desc: '避免50件过期', threshold: { type: 'totalSaved', value: 50 } },
-  { id: 'tracker_100', icon: '🔥', name: '百件达人', desc: '追踪100件物品', threshold: { type: 'totalTracked', value: 100 } },
-  { id: 'save_100', icon: '👑', name: '守护传说', desc: '避免100件过期', threshold: { type: 'totalSaved', value: 100 } },
-  { id: 'rank_top10', icon: '🏅', name: '榜上留名', desc: '进入全网前10%', threshold: { type: 'percentile', value: 90 } }
+  { id: 'first_save', name: '初次守护', desc: '首次避免物品过期', threshold: { type: 'totalSaved', value: 1 } },
+  { id: 'tracker_10', name: '管理达人', desc: '追踪10件物品', threshold: { type: 'totalTracked', value: 10 } },
+  { id: 'save_10', name: '节约之星', desc: '避免10件过期', threshold: { type: 'totalSaved', value: 10 } },
+  { id: 'tracker_50', name: '精准管理', desc: '追踪50件物品', threshold: { type: 'totalTracked', value: 50 } },
+  { id: 'save_50', name: '零浪费先锋', desc: '避免50件过期', threshold: { type: 'totalSaved', value: 50 } },
+  { id: 'tracker_100', name: '百件达人', desc: '追踪100件物品', threshold: { type: 'totalTracked', value: 100 } },
+  { id: 'save_100', name: '守护传说', desc: '避免100件过期', threshold: { type: 'totalSaved', value: 100 } },
+  { id: 'rank_top10', name: '榜上留名', desc: '进入全网前10%', threshold: { type: 'percentile', value: 90 } }
 ]
 
 // 鼓励语
@@ -127,7 +127,7 @@ Page({
         const nextThreshold = isMax ? level.min : (level.max + 1)
         const remaining = isMax ? 0 : (nextThreshold - totalSaved)
         return {
-          icon: level.icon,
+          mark: level.mark,
           name: level.name,
           currentName: level.name,
           nextName: level.nextName,
@@ -159,7 +159,6 @@ Page({
       }
       return {
         id: def.id,
-        icon: def.icon,
         name: def.name,
         desc: def.desc,
         earned

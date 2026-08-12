@@ -23,28 +23,29 @@
 
   <view class="index-content">
   <!-- 成就卡片 -->
-  <view class="achievement-card" bindtap="goLeaderboard" wx:if="{{achievementText}}">
-    <view class="ac-top">
-      <view class="ac-level">
-        <text class="ac-level-icon">{{levelIcon}}</text>
-        <text class="ac-level-name">{{levelName}}</text>
+  <view class="ac-card" bindtap="goLeaderboard" wx:if="{{achievementText}}">
+    <view class="ac-card-glow"></view>
+    <view class="ac-card-body">
+      <view class="ac-card-head">
+        <text class="ac-card-mark">Lv.{{levelMark}}</text>
+        <text class="ac-card-name">{{levelName}}</text>
+        <text class="ac-card-badges" wx:if="{{earnedBadges > 0}}">{{earnedBadges}}枚徽章</text>
       </view>
-      <text class="ac-badge-count" wx:if="{{earnedBadges > 0}}">{{earnedBadges}}枚徽章</text>
-    </view>
-    <view class="ac-stats">
-      <view class="ac-stat-item">
-        <text class="ac-stat-num">{{totalSaved}}</text>
-        <text class="ac-stat-label">件已挽救</text>
+      <view class="ac-card-stats">
+        <view class="ac-card-stat">
+          <text class="ac-card-num">{{totalSaved}}</text>
+          <text class="ac-card-label">件已避免</text>
+        </view>
+        <view class="ac-card-sep"></view>
+        <view class="ac-card-stat">
+          <text class="ac-card-num">¥{{estimatedSaved}}</text>
+          <text class="ac-card-label">预估省下</text>
+        </view>
       </view>
-      <view class="ac-divider"></view>
-      <view class="ac-stat-item">
-        <text class="ac-stat-num ac-money">¥{{estimatedSaved}}</text>
-        <text class="ac-stat-label">预估省下</text>
+      <view class="ac-card-foot" wx:if="{{achievementSub}}">
+        <text class="ac-card-sub">{{achievementSub}}</text>
+        <text class="ac-card-arrow">›</text>
       </view>
-    </view>
-    <view class="ac-footer" wx:if="{{achievementSub}}">
-      <text class="ac-footer-text">{{achievementSub}}</text>
-      <text class="ac-arrow">›</text>
     </view>
   </view>
 
