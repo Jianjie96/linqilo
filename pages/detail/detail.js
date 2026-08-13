@@ -44,17 +44,8 @@ Page({
     const statusText = util.getStatusText(status)
     const countdownText = util.getCountdownText(item.expiryDate)
 
-    // 计算进度百分比
-    let progressPercent = 0
-    if (status === 'expired') {
-      progressPercent = 100
-    } else if (item.productionDate) {
-      const totalDays = util.calcDaysRemaining(item.productionDate) * -1 + daysRemaining
-      const elapsedDays = totalDays - daysRemaining
-      progressPercent = Math.min(100, Math.round((elapsedDays / totalDays) * 100))
-    } else {
-      progressPercent = daysRemaining > 30 ? 10 : (daysRemaining > 7 ? 40 : (daysRemaining > 0 ? 70 : 100))
-    }
+    // 消耗进度百分比（与首页卡片共用同一公式）
+    const progressPercent = util.calcProgressPercent(item)
 
     this.setData({
       item: {

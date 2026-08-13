@@ -39,7 +39,7 @@ Page({
     bingoItemName: '',
     achievementText: '',
     achievementSub: '',
-    levelMark: 'I',
+    levelMark: '1',
     levelName: '新手守护者',
     totalSaved: 0,
     estimatedSaved: 0,
@@ -153,6 +153,7 @@ Page({
       const status = util.getItemStatus(item.expiryDate, item.alertDays || alertDays)
       const countdownText = util.getCountdownText(item.expiryDate)
       const statusText = util.getStatusText(status)
+      const progressPercent = util.calcProgressPercent(item)
 
       return {
         ...item,
@@ -160,6 +161,7 @@ Page({
         status,
         countdownText,
         statusText,
+        progressPercent,
         expiryDateFormatted: item.expiryDate,
         savedAtText: item.savedAt ? util.formatDate(item.savedAt) : '',
         categoryClass: CATEGORY_CLASS_MAP[item.category] || 'cat-other'
@@ -421,14 +423,14 @@ Page({
     }
   },
 
-  // 等级计算（与 leaderboard 保持一致）
+  // 等级计算（与 leaderboard 保持一致，mark 用阿拉伯数字避免罗马数字被误读）
   calcLevel(totalSaved) {
     const LEVELS = [
-      { min: 0, max: 4, mark: 'I', name: '新手守护者' },
-      { min: 5, max: 19, mark: 'II', name: '过期终结者' },
-      { min: 20, max: 49, mark: 'III', name: '防腐达人' },
-      { min: 50, max: 99, mark: 'IV', name: '节约大师' },
-      { min: 100, max: Infinity, mark: 'V', name: '零浪费传奇' }
+      { min: 0, max: 4, mark: '1', name: '新手守护者' },
+      { min: 5, max: 19, mark: '2', name: '过期终结者' },
+      { min: 20, max: 49, mark: '3', name: '防腐达人' },
+      { min: 50, max: 99, mark: '4', name: '节约大师' },
+      { min: 100, max: Infinity, mark: '5', name: '零浪费传奇' }
     ]
     for (let i = LEVELS.length - 1; i >= 0; i--) {
       if (totalSaved >= LEVELS[i].min) return LEVELS[i]
@@ -458,9 +460,9 @@ Page({
 
   onTouchStart(e) {
     const id = e.currentTarget.dataset.id
-    // 已省钱物品不可左滑
+    // 已省钱/已过期/无价值的物品不可左滑（与详情页标记按钮条件一致）
     const item = this.data.items.find(i => i.id === id)
-    if (!item || item.saved) return
+    if (!item || item.saved || item.status === 'expired' || !(item.value > 0)) return
     this._touchStartX = e.touches[0].clientX
     this._touchStartY = e.touches[0].clientY
     this._swipeTargetId = id

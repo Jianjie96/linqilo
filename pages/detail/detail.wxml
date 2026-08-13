@@ -28,8 +28,6 @@
         </text>
       </view>
 
-      <view class="countdown-text status-{{status}}">{{countdownText}}</view>
-
       <!-- 进度条 -->
       <view class="detail-progress">
         <view class="progress-bar-lg">

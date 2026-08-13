@@ -104,8 +104,8 @@
         class="swipe-wrapper {{item.saved ? 'swipe-wrapper-saved' : ''}} {{_animateCards ? 'card-rise' : ''}}"
         style="{{_animateCards ? 'animation-delay:' + index * 0.06 + 's;' : ''}}"
       >
-        <!-- 背后的省钱按钮 -->
-        <view class="swipe-save-btn" wx:if="{{!item.saved}}" data-id="{{item.id}}" catchtap="onSaveItem">
+        <!-- 背后的省钱按钮（与详情页标记按钮条件一致：未省钱、未过期、有价值） -->
+        <view class="swipe-save-btn" wx:if="{{!item.saved && item.status !== 'expired' && item.value > 0}}" data-id="{{item.id}}" catchtap="onSaveItem">
           <text>完成</text>
         </view>
 
@@ -113,9 +113,9 @@
         <view
           class="item-card card {{item.swiped ? 'swiped' : ''}} {{item._savingFlash ? 'card-saving-flash' : ''}}"
           style="transform: translateX({{item._swipeX || 0}}rpx); transition: {{item._swiping ? 'none' : 'transform 0.3s'}};"
-          bindtouchstart="{{item.saved ? '' : 'onTouchStart'}}"
-          bindtouchmove="{{item.saved ? '' : 'onTouchMove'}}"
-          bindtouchend="{{item.saved ? '' : 'onTouchEnd'}}"
+          bindtouchstart="{{(!item.saved && item.status !== 'expired' && item.value > 0) ? 'onTouchStart' : ''}}"
+          bindtouchmove="{{(!item.saved && item.status !== 'expired' && item.value > 0) ? 'onTouchMove' : ''}}"
+          bindtouchend="{{(!item.saved && item.status !== 'expired' && item.value > 0) ? 'onTouchEnd' : ''}}"
           data-id="{{item.id}}"
         >
           <view class="item-inner" bindtap="goDetail" data-id="{{item.id}}">
@@ -143,7 +143,7 @@
 
             <!-- 进度条 -->
             <view class="progress-bar">
-              <view class="progress-fill progress-{{item.status}}" style="width: {{item.status === 'expired' ? '100' : (item.daysRemaining > 30 ? '10' : (item.daysRemaining > 7 ? '40' : (item.daysRemaining > 0 ? '70' : '100')))}}%"></view>
+              <view class="progress-fill progress-{{item.status}}" style="width: {{item.progressPercent}}%"></view>
             </view>
 
             <!-- 临期价值提醒 → 可点击省钱 -->
@@ -161,8 +161,8 @@
               <text class="value-reminder-text">已省钱 ¥{{item.value}}</text>
             </view>
           </view>
-          <!-- 左滑提示（未省钱时显示） -->
-          <view class="swipe-hint" wx:if="{{!item.saved && (!item._swipeX || item._swipeX === 0)}}">
+          <!-- 左滑提示（与详情页标记按钮条件一致：未省钱、未过期、有价值） -->
+          <view class="swipe-hint" wx:if="{{!item.saved && item.status !== 'expired' && item.value > 0 && (!item._swipeX || item._swipeX === 0)}}">
             <text class="swipe-hint-text">左滑完成</text>
           </view>
         </view>

@@ -1,13 +1,13 @@
 const syncUtil = require('../../utils/sync.js')
 const shareMixin = require('../../utils/share.js')
 
-// 等级定义
+// 等级定义（mark 用阿拉伯数字，避免罗马数字 'II' 被误读为「11」）
 const LEVELS = [
-  { min: 0, max: 4, mark: 'I', name: '新手守护者', nextName: '过期终结者' },
-  { min: 5, max: 19, mark: 'II', name: '过期终结者', nextName: '防腐达人' },
-  { min: 20, max: 49, mark: 'III', name: '防腐达人', nextName: '节约大师' },
-  { min: 50, max: 99, mark: 'IV', name: '节约大师', nextName: '零浪费传奇' },
-  { min: 100, max: Infinity, mark: 'V', name: '零浪费传奇', nextName: '' }
+  { min: 0, max: 4, mark: '1', name: '新手守护者', nextName: '过期终结者' },
+  { min: 5, max: 19, mark: '2', name: '过期终结者', nextName: '防腐达人' },
+  { min: 20, max: 49, mark: '3', name: '防腐达人', nextName: '节约大师' },
+  { min: 50, max: 99, mark: '4', name: '节约大师', nextName: '零浪费传奇' },
+  { min: 100, max: Infinity, mark: '5', name: '零浪费传奇', nextName: '' }
 ]
 
 // 徽章定义

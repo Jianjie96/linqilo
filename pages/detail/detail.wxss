@@ -71,11 +71,6 @@
   font-weight: 500;
 }
 
-.countdown-text {
-  font-size: 30rpx;
-  margin-bottom: 30rpx;
-}
-
 /* 进度条 */
 .detail-progress {
   margin-top: 20rpx;
@@ -93,6 +88,12 @@
   border-radius: 6rpx;
   transition: width 0.5s ease;
 }
+
+/* 填充条状态色（与全局 .status-* 色系一致） */
+.progress-fill-lg.progress-safe { background: #07C160; }
+.progress-fill-lg.progress-warning { background: #FF9500; }
+.progress-fill-lg.progress-danger { background: #FF3B30; }
+.progress-fill-lg.progress-expired { background: #999; }
 
 .progress-labels {
   display: flex;

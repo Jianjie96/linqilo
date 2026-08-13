@@ -63,6 +63,26 @@ function getCountdownText(expiryDate) {
 }
 
 /**
+ * 计算物品消耗进度百分比（0-100），首页卡片与详情页共用
+ * 起点优先用生产日期（保质期消耗进度）；无生产日期时按剩余天数档位估算
+ */
+function calcProgressPercent(item) {
+  const daysRemaining = calcDaysRemaining(item.expiryDate)
+  if (daysRemaining < 0) return 100 // 已过期
+
+  if (item.productionDate) {
+    const totalDays = calcDaysRemaining(item.productionDate) * -1 + daysRemaining
+    if (totalDays > 0) {
+      const elapsedDays = totalDays - daysRemaining
+      return Math.min(100, Math.round((elapsedDays / totalDays) * 100))
+    }
+  }
+
+  // 无生产日期：档位估算
+  return daysRemaining > 30 ? 10 : (daysRemaining > 7 ? 40 : (daysRemaining > 0 ? 70 : 100))
+}
+
+/**
  * 获取相对时间文字
  */
 function getRelativeTime(dateStr) {
@@ -382,6 +402,7 @@ module.exports = {
   getItemStatus,
   getStatusText,
   getCountdownText,
+  calcProgressPercent,
   getRelativeTime,
   parseDateFromText,
   isValidDate,
