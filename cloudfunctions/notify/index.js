@@ -151,15 +151,16 @@ exports.main = async (event, context) => {
   const todayStr = formatDate(today)
 
   try {
-    // 1. 查询所有未过期的物品（到期日 >= 今天），不设上限，由每件物品自身的 alertDays 决定是否临期
-    const itemsRes = await db.collection('items').where({
-      expiryDate: _.gte(todayStr)
-    }).limit(500).get()
+    // 1. 查询需要提醒的物品：已过期 + 未过期分开查（避免单次 limit 500 截断，也与首页 stats 口径一致）
+    const [expiredRes, upcomingRes] = await Promise.all([
+      db.collection('items').where({ expiryDate: _.lt(todayStr) }).limit(500).get(),
+      db.collection('items').where({ expiryDate: _.gte(todayStr) }).limit(500).get()
+    ])
 
-    const items = itemsRes.data || []
+    const items = [...(expiredRes.data || []), ...(upcomingRes.data || [])]
 
     if (items.length === 0) {
-      return { success: true, sent: 0, message: '没有临期物品' }
+      return { success: true, sent: 0, message: '没有需要提醒的物品' }
     }
 
     // 2. 按用户 openid 分组
@@ -167,6 +168,9 @@ exports.main = async (event, context) => {
     for (const item of items) {
       const openid = item._openid || item.openid
       if (!openid) continue
+
+      // 已省钱物品不再提醒（与首页 stats 一致：saved 单独计数，不计入临期/过期）
+      if (item.saved) continue
 
       const alertDays = item.alertDays || DEFAULT_ALERT_DAYS
       const daysRemaining = calcDaysRemaining(item.expiryDate)
