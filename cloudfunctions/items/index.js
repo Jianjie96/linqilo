@@ -72,7 +72,8 @@ async function getStats(openid) {
     expired: 0,
     savedCount: 0,
     savedValue: 0,
-    totalValue: 0
+    totalValue: 0,
+    total: 0
   }
 
   const pageSize = 1000
@@ -86,6 +87,8 @@ async function getStats(openid) {
       .skip(skip)
       .limit(pageSize)
       .get()
+
+    stats.total += res.data.length
 
     for (const doc of res.data) {
       const value = parseFloat(doc.value) || 0

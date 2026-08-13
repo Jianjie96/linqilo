@@ -26,6 +26,7 @@ Page({
     loadingMore: false,
     listLoadedAll: false,
     listTotal: 0,
+    totalCount: 0, // 云端全量物品总数（分页模式下「全部」统计必须来自云端）
     safeCount: 0,
     warningCount: 0,
     expiredCount: 0,
@@ -74,7 +75,8 @@ Page({
       app.globalData.items = pageItems
       this.setData({
         visibleCount: PAGE_SIZE,
-        hasMore: pageItems.length < total
+        hasMore: pageItems.length < total,
+        totalCount: total
       })
       this._renderItems(true)
     } catch (err) {
@@ -93,7 +95,9 @@ Page({
         expiredCount: stats.expired || 0,
         savedCount: stats.savedCount || 0,
         savedValue: stats.savedValue || 0,
-        totalValue: stats.totalValue || 0
+        totalValue: stats.totalValue || 0,
+        // 云函数未部署新版本时 total 为空，保留 fetchItemsPage 已写入的云端总数
+        totalCount: stats.total || this.data.totalCount
       })
       this._animateTotalValue(stats.totalValue || 0)
     } catch (err) {
@@ -271,7 +275,8 @@ Page({
 
       this.setData({
         visibleCount: this.data.visibleCount + PAGE_SIZE,
-        hasMore: merged.length < total
+        hasMore: merged.length < total,
+        totalCount: total
       })
       this._renderItems()
     } catch (err) {

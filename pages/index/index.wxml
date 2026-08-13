@@ -3,7 +3,7 @@
   <view class="stats-bar">
     <view class="stats-content">
       <view class="stat-item">
-        <text class="stat-num">{{items.length}}</text>
+        <text class="stat-num">{{totalCount}}</text>
         <text class="stat-label">全部</text>
       </view>
       <view class="stat-item stat-safe">
