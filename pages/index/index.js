@@ -44,6 +44,9 @@ Page({
     totalSaved: 0,
     estimatedSaved: 0,
     earnedBadges: 0,
+    // 组队绑定视角
+    boundTeamName: '个人',
+    boundGroupId: null,
     _animateCards: false,
     loading: true
   },
@@ -51,6 +54,9 @@ Page({
   _dataLoaded: false, // 是否已加载过数据
 
   onShow() {
+    // 更新绑定状态
+    this._updateBindingDisplay()
+
     if (this._dataLoaded) {
       // 从子页面返回：缓存已是最新（add/detail 直接修改了 globalData），只需重新渲染 UI
       this._renderItems()
@@ -63,12 +69,22 @@ Page({
     this.loadAchievementBanner()
   },
 
+  // 更新绑定状态显示
+  _updateBindingDisplay() {
+    const { boundGroupId, boundTeamName } = app.globalData
+    this.setData({
+      boundGroupId,
+      boundTeamName: boundTeamName || '个人'
+    })
+  },
+
   // 从云端拉取第一页并渲染
   async refreshItems() {
     this.setData({ loading: true })
+    const groupId = app.getBoundGroupId()
     try {
       const [{ items: pageItems, total }] = await Promise.all([
-        syncUtil.fetchItemsPage(0, PAGE_SIZE),
+        syncUtil.fetchItemsPage(0, PAGE_SIZE, groupId),
         this._loadStats()
       ])
 
@@ -87,8 +103,9 @@ Page({
 
   // 拉取云端全量统计（分页模式下本地数据是子集，统计必须来自云端）
   async _loadStats() {
+    const groupId = app.getBoundGroupId()
     try {
-      const stats = await syncUtil.fetchItemStats()
+      const stats = await syncUtil.fetchItemStats(groupId)
       this.setData({
         safeCount: stats.safe || 0,
         warningCount: stats.warning || 0,
@@ -258,10 +275,12 @@ Page({
   // 从云端加载下一页
   async _loadMore() {
     this.setData({ loadingMore: true })
+    const groupId = app.getBoundGroupId()
     try {
       const { items: pageItems, total } = await syncUtil.fetchItemsPage(
         app.globalData.items.length,
-        PAGE_SIZE
+        PAGE_SIZE,
+        groupId
       )
 
       // 合并去重后写回缓存
@@ -302,6 +321,11 @@ Page({
   // 跳转排行榜
   goLeaderboard() {
     wx.navigateTo({ url: '/pages/leaderboard/leaderboard' })
+  },
+
+  // 跳转队伍管理
+  goTeam() {
+    wx.navigateTo({ url: '/pages/team/team' })
   },
 
   // 跳转设置

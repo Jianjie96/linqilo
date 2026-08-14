@@ -46,9 +46,23 @@
     </view>
   </view>
 
+  <!-- 组队管理 -->
+  <view class="section-title">组队共享</view>
+  <view class="card">
+    <view class="settings-item" bindtap="goTeam">
+      <text class="settings-item-label">👥 队伍管理</text>
+      <text class="settings-item-value">{{boundTeamName}}</text>
+      <text class="settings-item-arrow">›</text>
+    </view>
+  </view>
+
   <!-- 关于 -->
   <view class="section-title">关于</view>
   <view class="card">
+    <view class="settings-item" bindtap="goHelp">
+      <text class="settings-item-label">📖 使用帮助</text>
+      <text class="settings-item-arrow">›</text>
+    </view>
     <view class="settings-item" bindtap="showAbout">
       <text class="settings-item-label">关于「叮咚到期」</text>
       <text class="settings-item-value">v{{aboutInfo.version}}</text>

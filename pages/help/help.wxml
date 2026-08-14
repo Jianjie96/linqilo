@@ -1,0 +1,140 @@
+<view class="container">
+  <!-- 欢迎 -->
+  <view class="hero">
+    <text class="hero-icon">📖</text>
+    <text class="hero-title">叮咚到期 · 使用帮助</text>
+    <text class="hero-sub">了解组队共享的核心概念，轻松管理你的物品</text>
+  </view>
+
+  <!-- 核心概念：加入 vs 绑定 -->
+  <view class="section">
+    <view class="section-head">
+      <text class="section-num">1</text>
+      <text class="section-title">加入 vs 绑定</text>
+    </view>
+    <view class="card">
+      <view class="concept-row">
+        <view class="concept-icon">🤝</view>
+        <view class="concept-body">
+          <text class="concept-title">加入 = 成员资格</text>
+          <text class="concept-desc">加入一个队伍后，你可以查看和操作队伍中的所有共享物品。</text>
+          <text class="concept-desc">你可以同时加入多个队伍。</text>
+        </view>
+      </view>
+      <view class="concept-divider"></view>
+      <view class="concept-row">
+        <view class="concept-icon">📌</view>
+        <view class="concept-body">
+          <text class="concept-title">绑定 = 当前身份</text>
+          <text class="concept-desc">绑定决定你当前看到的数据和收到的推送通知。</text>
+          <text class="concept-desc">同一时间只能绑定一个目标（个人或某支队伍）。</text>
+        </view>
+      </view>
+    </view>
+    <view class="tip-box">
+      <text class="tip-icon">💡</text>
+      <text class="tip-text">类比：你可以加入多个公司群，但只能以一家公司员工身份使用工卡。</text>
+    </view>
+  </view>
+
+  <!-- 数据归属 -->
+  <view class="section">
+    <view class="section-head">
+      <text class="section-num">2</text>
+      <text class="section-title">数据归属</text>
+    </view>
+    <view class="card">
+      <view class="rule-item">
+        <text class="rule-dot"></text>
+        <text class="rule-text">谁创建的物品，归谁所有</text>
+      </view>
+      <view class="rule-item">
+        <text class="rule-dot"></text>
+        <text class="rule-text">队伍中所有人都可以查看和编辑共享物品</text>
+      </view>
+      <view class="rule-item">
+        <text class="rule-dot"></text>
+        <text class="rule-text">绑定个人时，添加的物品归个人；绑定队伍时，添加的物品归队伍</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 退出规则 -->
+  <view class="section">
+    <view class="section-head">
+      <text class="section-num">3</text>
+      <text class="section-title">退出队伍</text>
+    </view>
+    <view class="card">
+      <view class="rule-item">
+        <text class="rule-dot"></text>
+        <text class="rule-text">退出时，你创建的物品会复制一份留在队伍，队友可以继续编辑</text>
+      </view>
+      <view class="rule-item">
+        <text class="rule-dot"></text>
+        <text class="rule-text">原件回到你的个人空间，不会丢失</text>
+      </view>
+      <view class="rule-item">
+        <text class="rule-dot"></text>
+        <text class="rule-text">如果最后一个成员退出，队伍自动解散，副本将被清理</text>
+      </view>
+    </view>
+    <view class="tip-box">
+      <text class="tip-icon">💡</text>
+      <text class="tip-text">退出后再加入同一队伍，可能看到重复物品，手动删除即可。</text>
+    </view>
+  </view>
+
+  <!-- 推送通知 -->
+  <view class="section">
+    <view class="section-head">
+      <text class="section-num">4</text>
+      <text class="section-title">推送通知</text>
+    </view>
+    <view class="card">
+      <view class="rule-item">
+        <text class="rule-dot"></text>
+        <text class="rule-text">通知只推送你绑定的目标：绑定个人收个人提醒，绑定队伍收队伍提醒</text>
+      </view>
+      <view class="rule-item">
+        <text class="rule-dot"></text>
+        <text class="rule-text">每天早上 8:00 自动检查临期物品</text>
+      </view>
+      <view class="rule-item">
+        <text class="rule-dot"></text>
+        <text class="rule-text">需要先在设置页开启通知授权</text>
+      </view>
+    </view>
+    <view class="tip-box">
+      <text class="tip-icon">💡</text>
+      <text class="tip-text">切换绑定后，推送内容也会跟着变化，始终与你当前的绑定一致。</text>
+    </view>
+  </view>
+
+  <!-- 邀请队友 -->
+  <view class="section">
+    <view class="section-head">
+      <text class="section-num">5</text>
+      <text class="section-title">邀请队友</text>
+    </view>
+    <view class="card">
+      <view class="rule-item">
+        <text class="rule-dot"></text>
+        <text class="rule-text">创建队伍后获得 6 位邀请码</text>
+      </view>
+      <view class="rule-item">
+        <text class="rule-dot"></text>
+        <text class="rule-text">将邀请码发给家人或朋友，对方在「队伍管理」页输入即可加入</text>
+      </view>
+      <view class="rule-item">
+        <text class="rule-dot"></text>
+        <text class="rule-text">创建者可以随时刷新邀请码（旧码失效）</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 底部 -->
+  <view class="footer">
+    <text class="footer-text">叮咚到期 · 提前记录，临期提醒，重要事情不再忘</text>
+  </view>
+</view>

@@ -9,6 +9,7 @@ Page({
     isSubscribed: false,
     isSyncing: false,
     cloudEnabled: false,
+    boundTeamName: '个人',
     aboutInfo: {
       name: '叮咚到期',
       version: '1.0.0'
@@ -23,12 +24,32 @@ Page({
   onShow() {
     this.loadSettings()
     this.checkSubscriptionStatus()
+    this._updateBindingDisplay()
   },
 
   loadSettings() {
     this.setData({
       totalItems: app.globalData.items.length
     })
+    this._updateBindingDisplay()
+  },
+
+  // 更新绑定状态显示
+  _updateBindingDisplay() {
+    const { boundTeamName } = app.globalData
+    this.setData({
+      boundTeamName: boundTeamName || '个人'
+    })
+  },
+
+  // 跳转队伍管理
+  goTeam() {
+    wx.navigateTo({ url: '/pages/team/team' })
+  },
+
+  // 跳转帮助
+  goHelp() {
+    wx.navigateTo({ url: '/pages/help/help' })
   },
 
   // 检查云开发状态

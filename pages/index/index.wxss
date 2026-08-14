@@ -13,6 +13,47 @@ page {
   padding: 0 30rpx;
 }
 
+/* ===== 绑定视角标签 ===== */
+.binding-tag-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16rpx 30rpx 0;
+}
+
+.binding-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 8rpx;
+  padding: 8rpx 20rpx;
+  border-radius: 24rpx;
+  font-size: 24rpx;
+  font-weight: 500;
+}
+
+.binding-tag-personal {
+  background: #F0F0F0;
+  color: #666;
+}
+
+.binding-tag-team {
+  background: rgba(7, 193, 96, 0.1);
+  color: #07C160;
+}
+
+.binding-tag-icon {
+  font-size: 24rpx;
+}
+
+.binding-tag-text {
+  font-size: 24rpx;
+}
+
+.binding-tag-hint {
+  font-size: 22rpx;
+  color: #999;
+}
+
 /* ===== 加载骨架屏 ===== */
 .loading-block {
   padding: 0 30rpx;

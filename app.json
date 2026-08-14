@@ -5,7 +5,9 @@
     "pages/add/add",
     "pages/detail/detail",
     "pages/leaderboard/leaderboard",
-    "pages/settings/settings"
+    "pages/settings/settings",
+    "pages/team/team",
+    "pages/help/help"
   ],
   "window": {
     "navigationBarBackgroundColor": "#07C160",

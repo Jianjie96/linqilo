@@ -1,4 +1,13 @@
 <view class="page-index">
+  <!-- 绑定视角标签 -->
+  <view class="binding-tag-bar" bindtap="goTeam">
+    <view class="binding-tag {{boundGroupId ? 'binding-tag-team' : 'binding-tag-personal'}}">
+      <text class="binding-tag-icon">{{boundGroupId ? '👥' : '👤'}}</text>
+      <text class="binding-tag-text">{{boundTeamName}}</text>
+    </view>
+    <text class="binding-tag-hint" wx:if="{{boundGroupId}}">点击管理 ›</text>
+  </view>
+
   <!-- 顶部统计 -->
   <view class="stats-bar">
     <view class="stats-content">

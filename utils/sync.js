@@ -2,7 +2,8 @@
  * 云数据库操作工具
  * 
  * 所有操作通过云函数调用，Network 面板可见
- * 云函数：items（action: get | add | update | delete）
+ * 云函数：items（action: get | stats | add | update | delete）
+ * 云函数：teams（action: create | join | leave | bind | getMy | getMembers | refreshCode）
  */
 
 const COLLECTION_SUBSCRIPTIONS = 'subscriptions'
@@ -53,18 +54,19 @@ function normalizeItem(doc) {
     value: doc.value || 0,
     saved: doc.saved || false,
     savedAt: doc.savedAt || '',
-    createdAt: doc.createdAt || ''
+    createdAt: doc.createdAt || '',
+    groupId: doc.groupId || null
   }
 }
 
-async function fetchAllItems() {
-  const result = await callCloud('items', { action: 'get', skip: 0, limit: 1000 })
+async function fetchAllItems(groupId) {
+  const result = await callCloud('items', { action: 'get', groupId, skip: 0, limit: 1000 })
   return (result.data || []).map(normalizeItem)
 }
 
 // 分页拉取物品：返回 { items, total }
-async function fetchItemsPage(skip = 0, limit = 20) {
-  const result = await callCloud('items', { action: 'get', skip, limit })
+async function fetchItemsPage(skip = 0, limit = 20, groupId) {
+  const result = await callCloud('items', { action: 'get', groupId, skip, limit })
   return {
     items: (result.data || []).map(normalizeItem),
     total: result.total || 0
@@ -72,22 +74,22 @@ async function fetchItemsPage(skip = 0, limit = 20) {
 }
 
 // 拉取全量统计摘要（安全/临期/已过期/已省钱计数与价值）
-async function fetchItemStats() {
-  const result = await callCloud('items', { action: 'stats' })
+async function fetchItemStats(groupId) {
+  const result = await callCloud('items', { action: 'stats', groupId })
   return result.data || {}
 }
 
-async function addItemToCloud(item) {
-  const result = await callCloud('items', { action: 'add', item })
+async function addItemToCloud(item, groupId) {
+  const result = await callCloud('items', { action: 'add', item, groupId })
   return result.data
 }
 
-async function updateCloudItem(itemId, updates) {
-  await callCloud('items', { action: 'update', itemId, updates })
+async function updateCloudItem(itemId, updates, groupId) {
+  await callCloud('items', { action: 'update', itemId, updates, groupId })
 }
 
-async function deleteCloudItem(itemId) {
-  await callCloud('items', { action: 'delete', itemId })
+async function deleteCloudItem(itemId, groupId) {
+  await callCloud('items', { action: 'delete', itemId, groupId })
 }
 
 // --- 排行榜 / 成就系统 ---
@@ -156,6 +158,36 @@ async function getSubscriptionStatus(openid) {
   }
 }
 
+// --- 组队管理 ---
+
+function createTeam(name) {
+  return callCloud('teams', { action: 'create', name })
+}
+
+function joinTeam(inviteCode) {
+  return callCloud('teams', { action: 'join', inviteCode })
+}
+
+function leaveTeam(teamId) {
+  return callCloud('teams', { action: 'leave', teamId })
+}
+
+function bindTeam(teamId) {
+  return callCloud('teams', { action: 'bind', teamId })
+}
+
+function getMyTeams() {
+  return callCloud('teams', { action: 'getMy' })
+}
+
+function getTeamMembers(teamId) {
+  return callCloud('teams', { action: 'getMembers', teamId })
+}
+
+function refreshInviteCode(teamId) {
+  return callCloud('teams', { action: 'refreshCode', teamId })
+}
+
 module.exports = {
   getOpenid,
   fetchAllItems,
@@ -169,5 +201,12 @@ module.exports = {
   recordExpired,
   getLeaderboardStats,
   updateSubscription,
-  getSubscriptionStatus
+  getSubscriptionStatus,
+  createTeam,
+  joinTeam,
+  leaveTeam,
+  bindTeam,
+  getMyTeams,
+  getTeamMembers,
+  refreshInviteCode
 }

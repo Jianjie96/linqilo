@@ -151,44 +151,85 @@ exports.main = async (event, context) => {
   const todayStr = formatDate(today)
 
   try {
-    // 1. 查询需要提醒的物品：已过期 + 未过期分开查（避免单次 limit 500 截断，也与首页 stats 口径一致）
+    // 1. 查询所有用户的绑定关系
+    const usersRes = await db.collection('users').get()
+    const users = usersRes.data || []
+
+    // 没有 users 表记录的用户走默认个人视角
+    // 构建每个用户需要检查的物品范围
+    const userNotifyMap = {} // openid -> { items: [], boundType: 'personal' | 'team' }
+
+    for (const user of users) {
+      const openid = user.openid
+      const boundGroupId = user.boundGroupId || null
+
+      userNotifyMap[openid] = {
+        boundGroupId,
+        boundType: boundGroupId ? 'team' : 'personal',
+        items: []
+      }
+    }
+
+    // 2. 查询所有物品
     const [expiredRes, upcomingRes] = await Promise.all([
       db.collection('items').where({ expiryDate: _.lt(todayStr) }).limit(500).get(),
       db.collection('items').where({ expiryDate: _.gte(todayStr) }).limit(500).get()
     ])
 
-    const items = [...(expiredRes.data || []), ...(upcomingRes.data || [])]
+    const allItems = [...(expiredRes.data || []), ...(upcomingRes.data || [])]
 
-    if (items.length === 0) {
-      return { success: true, sent: 0, message: '没有需要提醒的物品' }
-    }
-
-    // 2. 按用户 openid 分组
-    const userItemsMap = {}
-    for (const item of items) {
-      const openid = item._openid || item.openid
-      if (!openid) continue
-
-      // 已省钱物品不再提醒（与首页 stats 一致：saved 单独计数，不计入临期/过期）
-      if (item.saved) continue
-
-      const alertDays = item.alertDays || DEFAULT_ALERT_DAYS
-      const daysRemaining = calcDaysRemaining(item.expiryDate)
-
-      // 判断是否在提醒范围内（已过期 或 在 alertDays 天内到期）
-      if (daysRemaining < 0 || daysRemaining <= alertDays) {
-        if (!userItemsMap[openid]) {
-          userItemsMap[openid] = []
+    // 3. 按绑定关系分发物品到对应用户
+    // 个人物品：按 _openid 分发
+    // 队伍物品：分发给绑定了该队伍的所有用户
+    const teamBindings = {} // teamId -> [openid, ...]
+    for (const user of users) {
+      if (user.boundGroupId) {
+        if (!teamBindings[user.boundGroupId]) {
+          teamBindings[user.boundGroupId] = []
         }
-        userItemsMap[openid].push({
-          ...item,
-          daysRemaining
-        })
+        teamBindings[user.boundGroupId].push(user.openid)
       }
     }
 
-    // 3. 查询已订阅的用户
-    const openids = Object.keys(userItemsMap)
+    for (const item of allItems) {
+      // 已省钱物品不再提醒
+      if (item.saved) continue
+
+      const daysRemaining = calcDaysRemaining(item.expiryDate)
+      const alertDays = item.alertDays || DEFAULT_ALERT_DAYS
+
+      // 判断是否在提醒范围内
+      if (daysRemaining >= 0 && daysRemaining > alertDays) continue
+
+      const itemWithDays = { ...item, daysRemaining }
+      const groupId = item.groupId || null
+
+      if (groupId) {
+        // 队伍物品：通知绑定了该队伍的所有用户
+        const openids = teamBindings[groupId] || []
+        for (const openid of openids) {
+          if (userNotifyMap[openid]) {
+            userNotifyMap[openid].items.push(itemWithDays)
+          }
+        }
+      } else {
+        // 个人物品：只通知创建者（且绑定个人）
+        const openid = item._openid || item.openid
+        if (openid && userNotifyMap[openid] && userNotifyMap[openid].boundType === 'personal') {
+          userNotifyMap[openid].items.push(itemWithDays)
+        } else if (openid && !userNotifyMap[openid]) {
+          // 用户没有 users 记录，默认个人视角
+          userNotifyMap[openid] = {
+            boundGroupId: null,
+            boundType: 'personal',
+            items: [itemWithDays]
+          }
+        }
+      }
+    }
+
+    // 4. 查询已订阅的用户
+    const openids = Object.keys(userNotifyMap).filter(id => userNotifyMap[id].items.length > 0)
     if (openids.length === 0) {
       return { success: true, sent: 0, message: '没有需要通知的用户' }
     }
@@ -200,14 +241,14 @@ exports.main = async (event, context) => {
 
     const subscribedOpenids = new Set((subsRes.data || []).map(s => s.openid))
 
-    // 4. 发送订阅消息
+    // 5. 发送订阅消息
     let sentCount = 0
     const errors = []
 
     for (const openid of openids) {
       if (!subscribedOpenids.has(openid)) continue
 
-      const userItems = userItemsMap[openid]
+      const userItems = userNotifyMap[openid].items
       if (!userItems || userItems.length === 0) continue
 
       // 按到期日期排序，取最紧急的物品

@@ -1,0 +1,111 @@
+<view class="container">
+  <!-- 当前绑定状态 -->
+  <view class="section-title">当前视角</view>
+  <view class="card binding-card">
+    <view class="binding-status">
+      <text class="binding-icon">{{boundGroupId ? '👥' : '👤'}}</text>
+      <text class="binding-name">{{boundTeamName}}</text>
+    </view>
+    <view class="binding-switch" wx:if="{{boundGroupId}}" bindtap="switchBinding" data-team-id="">
+      <text>切换到个人</text>
+    </view>
+  </view>
+
+  <!-- 创建队伍 -->
+  <view class="section-title">创建队伍</view>
+  <view class="card">
+    <view class="input-row">
+      <input class="team-input" placeholder="输入队伍名称" value="{{newTeamName}}" bindinput="onTeamNameInput" maxlength="20" />
+      <button class="btn-create" bindtap="createTeam">创建</button>
+    </view>
+  </view>
+
+  <!-- 加入队伍 -->
+  <view class="section-title">加入队伍</view>
+  <view class="card">
+    <view class="input-row">
+      <input class="team-input code-input" placeholder="输入 6 位邀请码" value="{{joinCode}}" bindinput="onJoinCodeInput" maxlength="6" />
+      <button class="btn-create" bindtap="joinTeam">加入</button>
+    </view>
+  </view>
+
+  <!-- 我的队伍列表 -->
+  <view class="section-title">我的队伍</view>
+  <view class="card">
+    <!-- 个人视角选项 -->
+    <view class="team-item {{!boundGroupId ? 'team-item-bound' : ''}}" bindtap="switchBinding" data-team-id="">
+      <view class="team-item-left">
+        <text class="team-item-icon">👤</text>
+        <view class="team-item-info">
+          <text class="team-item-name">个人空间</text>
+          <text class="team-item-hint">仅自己可见</text>
+        </view>
+      </view>
+      <view class="team-item-right">
+        <text class="bound-tag" wx:if="{{!boundGroupId}}">当前</text>
+      </view>
+    </view>
+
+    <!-- 队伍列表 -->
+    <block wx:if="{{hasTeams}}">
+      <block wx:for="{{teams}}" wx:key="teamId">
+        <view class="team-item {{item.isBound ? 'team-item-bound' : ''}}">
+          <view class="team-item-left" bindtap="showTeamDetail" data-team-id="{{item.teamId}}">
+            <text class="team-item-icon">👥</text>
+            <view class="team-item-info">
+              <text class="team-item-name">{{item.name}}</text>
+              <text class="team-item-hint">{{item.memberCount}} 人</text>
+            </view>
+          </view>
+          <view class="team-item-right">
+            <text class="bound-tag" wx:if="{{item.isBound}}">当前</text>
+            <text class="bind-btn" wx:if="{{!item.isBound}}" catchtap="switchBinding" data-team-id="{{item.teamId}}">绑定</text>
+            <text class="detail-btn" catchtap="showTeamDetail" data-team-id="{{item.teamId}}">详情 ›</text>
+          </view>
+        </view>
+      </block>
+    </block>
+
+    <view class="empty-teams" wx:if="{{!hasTeams}}">
+      <text class="empty-text">还没有加入任何队伍</text>
+    </view>
+  </view>
+
+  <!-- 队伍详情弹层 -->
+  <view class="detail-overlay" wx:if="{{showDetail}}" bindtap="hideTeamDetail">
+    <view class="detail-card" catchtap="">
+      <view class="detail-header">
+        <text class="detail-title">{{detailTeam.name}}</text>
+        <text class="detail-close" bindtap="hideTeamDetail">✕</text>
+      </view>
+
+      <!-- 邀请码 -->
+      <view class="detail-section">
+        <text class="detail-label">邀请码</text>
+        <view class="invite-code-row">
+          <text class="invite-code">{{detailTeam.inviteCode}}</text>
+          <text class="invite-copy" bindtap="copyInviteCode">复制</text>
+          <text class="invite-refresh" wx:if="{{detailTeam.isCreator}}" bindtap="refreshCode">刷新</text>
+        </view>
+      </view>
+
+      <!-- 成员列表 -->
+      <view class="detail-section">
+        <text class="detail-label">成员（{{detailMembers.length}}人）</text>
+        <view class="member-list">
+          <view class="member-item" wx:for="{{detailMembers}}" wx:key="openid">
+            <text class="member-name">
+              {{item.isSelf ? '我' : '队员'}}
+              <text class="member-badge" wx:if="{{item.isCreator}}">创建者</text>
+            </text>
+          </view>
+        </view>
+      </view>
+
+      <!-- 操作按钮 -->
+      <view class="detail-actions">
+        <button class="btn-leave" bindtap="leaveTeam">退出队伍</button>
+      </view>
+    </view>
+  </view>
+</view>
