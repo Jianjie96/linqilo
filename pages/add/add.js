@@ -316,8 +316,9 @@ Page({
 
     wx.showLoading({ title: '保存中...' })
     try {
-      await app.addItem(item)
-      syncUtil.recordAdd() // 记录追踪统计（不阻塞）
+      const saved = await app.addItem(item)
+      // 记录追踪统计（不阻塞），维度随当前视角
+      syncUtil.recordAdd(app.getViewGroupId(), saved.id)
       wx.hideLoading()
       wx.showToast({
         title: '添加成功',

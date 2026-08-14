@@ -92,22 +92,25 @@ async function deleteCloudItem(itemId, groupId) {
   await callCloud('items', { action: 'delete', itemId, groupId })
 }
 
-// --- 排行榜 / 成就系统 ---
+// --- 排行榜 / 成就系统（跟随视角） ---
+// teamId：不传或 'personal' = 个人视角；传队伍 id = 队伍视角（队内操作双写个人与队伍聚合）
+// itemId：用于同一物品同类型事件去重，防止多人重复操作同一物品虚增统计
 
-function recordAdd() {
-  return callCloud('leaderboard', { action: 'recordAdd' }).catch(() => {})
+function recordAdd(teamId, itemId) {
+  return callCloud('leaderboard', { action: 'recordAdd', teamId, itemId }).catch(() => {})
 }
 
-function recordSave(value) {
-  return callCloud('leaderboard', { action: 'recordSave', value }).catch(() => {})
+function recordSave(value, teamId, itemId) {
+  return callCloud('leaderboard', { action: 'recordSave', value, teamId, itemId }).catch(() => {})
 }
 
-function recordExpired() {
-  return callCloud('leaderboard', { action: 'recordExpired' }).catch(() => {})
+function recordExpired(teamId, itemId) {
+  return callCloud('leaderboard', { action: 'recordExpired', teamId, itemId }).catch(() => {})
 }
 
-function getLeaderboardStats() {
-  return callCloud('leaderboard', { action: 'getStats' })
+// 获取当前视角的统计 + 排行列表（个人视角：全体个人排行；队伍视角：队内成员排行）
+function getLeaderboardStats(teamId) {
+  return callCloud('leaderboard', { action: 'getStats', teamId })
 }
 
 // --- 订阅管理（保留直连数据库，频率低不影响调试） ---
@@ -176,6 +179,11 @@ function bindTeam(teamId) {
   return callCloud('teams', { action: 'bind', teamId })
 }
 
+// 切换视角（高频，轻量同步后端，不影响绑定与推送）
+function updateView(teamId) {
+  return callCloud('teams', { action: 'updateView', teamId })
+}
+
 function getMyTeams() {
   return callCloud('teams', { action: 'getMy' })
 }
@@ -206,6 +214,7 @@ module.exports = {
   joinTeam,
   leaveTeam,
   bindTeam,
+  updateView,
   getMyTeams,
   getTeamMembers,
   refreshInviteCode

@@ -291,13 +291,19 @@
 .btn-leave {
   width: 100%;
   height: 80rpx;
-  line-height: 80rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
   background: #fff;
   color: #FF3B30;
   border: 2rpx solid #FF3B30;
   border-radius: 16rpx;
   font-size: 30rpx;
   font-weight: 500;
+  line-height: normal;
 }
 
 .btn-leave::after {

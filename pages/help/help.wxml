@@ -6,11 +6,11 @@
     <text class="hero-sub">了解组队共享的核心概念，轻松管理你的物品</text>
   </view>
 
-  <!-- 核心概念：加入 vs 绑定 -->
+  <!-- 核心概念：加入 / 视角 / 绑定 -->
   <view class="section">
     <view class="section-head">
       <text class="section-num">1</text>
-      <text class="section-title">加入 vs 绑定</text>
+      <text class="section-title">加入 / 视角 / 绑定</text>
     </view>
     <view class="card">
       <view class="concept-row">
@@ -23,17 +23,25 @@
       </view>
       <view class="concept-divider"></view>
       <view class="concept-row">
+        <view class="concept-icon icon icon-eye-green"></view>
+        <view class="concept-body">
+          <text class="concept-title">视角 = 当前看哪个空间</text>
+          <text class="concept-desc">首页顶部下拉可以随时切换视角，切换很快，不影响推送。</text>
+        </view>
+      </view>
+      <view class="concept-divider"></view>
+      <view class="concept-row">
         <view class="concept-icon icon icon-pin-green"></view>
         <view class="concept-body">
-          <text class="concept-title">绑定 = 当前身份</text>
-          <text class="concept-desc">绑定决定你当前看到的数据和收到的推送通知。</text>
-          <text class="concept-desc">同一时间只能绑定一个目标（个人或某支队伍）。</text>
+          <text class="concept-title">绑定 = 推送目标</text>
+          <text class="concept-desc">绑定决定你收到的推送通知范围，同一时间只能绑定一个目标（个人或某支队伍）。</text>
+          <text class="concept-desc">在「队伍管理」页手动更换绑定，低频操作，更换时会强提醒。</text>
         </view>
       </view>
     </view>
     <view class="tip-box">
       <view class="tip-icon icon icon-bulb-gold"></view>
-      <text class="tip-text">类比：你可以加入多个公司群，但只能以一家公司员工身份使用工卡。</text>
+      <text class="tip-text">类比：你可以加入多个公司群，随时浏览任意群（视角），但只能指定一个群接收消息推送（绑定）。</text>
     </view>
   </view>
 
@@ -54,7 +62,7 @@
       </view>
       <view class="rule-item">
         <text class="rule-dot"></text>
-        <text class="rule-text">绑定个人时，添加的物品归个人；绑定队伍时，添加的物品归队伍</text>
+        <text class="rule-text">当前视角为个人时，添加的物品归个人；视角为队伍时，添加的物品归队伍</text>
       </view>
     </view>
   </view>
@@ -73,6 +81,14 @@
       <view class="rule-item">
         <text class="rule-dot"></text>
         <text class="rule-text">原件回到你的个人空间，不会丢失</text>
+      </view>
+      <view class="rule-item">
+        <text class="rule-dot"></text>
+        <text class="rule-text">彻底退出时，你在该队伍的成就贡献会被剥离</text>
+      </view>
+      <view class="rule-item">
+        <text class="rule-dot"></text>
+        <text class="rule-text">如果该队伍是你的绑定目标，绑定会重置为个人，推送随之变化</text>
       </view>
       <view class="rule-item">
         <text class="rule-dot"></text>
@@ -107,7 +123,7 @@
     </view>
     <view class="tip-box">
       <view class="tip-icon icon icon-bulb-gold"></view>
-      <text class="tip-text">切换绑定后，推送内容也会跟着变化，始终与你当前的绑定一致。</text>
+      <text class="tip-text">切换视角不影响推送；只有更换绑定才会改变推送范围，所以绑定操作会强提醒。</text>
     </view>
   </view>
 

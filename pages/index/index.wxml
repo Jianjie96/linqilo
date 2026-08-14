@@ -4,7 +4,7 @@
     <view class="header-content" style="height: 44px;">
       <!-- 左侧：视角切换 -->
       <view class="header-left" bindtap="toggleSwitcher">
-        <view class="header-switch-icon icon {{boundGroupId ? 'icon-users-white' : 'icon-user-white'}}"></view>
+        <view class="header-switch-icon icon {{viewGroupId ? 'icon-users-white' : 'icon-user-white'}}"></view>
         <text class="header-switch-name">{{boundTeamName}}</text>
         <view class="header-switch-arrow icon icon-chevron-down-white {{showSwitcher ? 'arrow-up' : ''}}"></view>
       </view>

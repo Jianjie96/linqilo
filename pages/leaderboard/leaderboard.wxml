@@ -6,13 +6,17 @@
   </view>
 
   <block wx:if="{{!loading}}">
-    <!-- 主成就区 -->
+    <!-- 主成就区（跟随视角：个人统计 / 队伍统计） -->
     <view class="hero">
       <view class="hero-glow"></view>
       <view class="hero-body">
-        <view class="level-tag">
+        <!-- 个人视角：等级标签；队伍视角：队伍名称标签 -->
+        <view class="level-tag" wx:if="{{!isTeamView}}">
           <text class="level-mark">Lv.{{levelInfo.mark}}</text>
           <text class="level-name">{{levelInfo.name}}</text>
+        </view>
+        <view class="level-tag team-tag" wx:else>
+          <text class="level-name">{{teamName}}</text>
         </view>
 
         <view class="figure">
@@ -23,7 +27,7 @@
         <view class="percentile" wx:if="{{stats.totalUsers > 0}}">
           <view class="percentile-head">
             <text class="percentile-num">{{stats.percentile}}%</text>
-            <text class="percentile-desc">超过的用户</text>
+            <text class="percentile-desc">超过的{{isTeamView ? '团队' : '用户'}}</text>
           </view>
           <view class="percentile-track">
             <view class="percentile-fill" style="width: {{stats.percentile}}%"></view>
@@ -51,48 +55,81 @@
       </view>
     </view>
 
-    <!-- 等级进度 -->
-    <view class="section">
-      <view class="sec-head">
-        <text class="sec-title">等级进度</text>
-        <text class="sec-sub">{{levelInfo.name}}</text>
+    <!-- 个人视角：等级进度 + 徽章 -->
+    <block wx:if="{{!isTeamView}}">
+      <!-- 等级进度 -->
+      <view class="section">
+        <view class="sec-head">
+          <text class="sec-title">等级进度</text>
+          <text class="sec-sub">{{levelInfo.name}}</text>
+        </view>
+        <view class="lv-track">
+          <view class="lv-fill" style="width: {{levelProgress}}%"></view>
+        </view>
+        <view class="lv-foot">
+          <text>{{stats.totalSaved}} / {{levelInfo.nextThreshold}}</text>
+          <text wx:if="{{!levelInfo.isMax}}">还需 {{levelInfo.remaining}} 件升至 {{levelInfo.nextName}}</text>
+          <text wx:else>已达最高等级</text>
+        </view>
       </view>
-      <view class="lv-track">
-        <view class="lv-fill" style="width: {{levelProgress}}%"></view>
-      </view>
-      <view class="lv-foot">
-        <text>{{stats.totalSaved}} / {{levelInfo.nextThreshold}}</text>
-        <text wx:if="{{!levelInfo.isMax}}">还需 {{levelInfo.remaining}} 件升至 {{levelInfo.nextName}}</text>
-        <text wx:else>已达最高等级</text>
-      </view>
-    </view>
 
-    <!-- 徽章 -->
+      <!-- 徽章 -->
+      <view class="section">
+        <view class="sec-head">
+          <text class="sec-title">成就徽章</text>
+          <text class="sec-sub">{{earnedBadges}} / {{badges.length}}</text>
+        </view>
+        <view class="badge-grid">
+          <view
+            wx:for="{{badges}}"
+            wx:key="id"
+            class="badge {{item.earned ? 'is-earned' : 'is-locked'}}"
+          >
+            <view class="badge-dot"></view>
+            <view class="badge-text">
+              <text class="badge-name">{{item.name}}</text>
+              <text class="badge-desc">{{item.desc}}</text>
+            </view>
+          </view>
+        </view>
+      </view>
+    </block>
+
+    <!-- 排行列表（跟随视角：个人排行 / 队内排行） -->
     <view class="section">
       <view class="sec-head">
-        <text class="sec-title">成就徽章</text>
-        <text class="sec-sub">{{earnedBadges}} / {{badges.length}}</text>
+        <text class="sec-title">{{isTeamView ? '队内排行' : '个人排行'}}</text>
+        <text class="sec-sub">{{isTeamView ? '按队内贡献排序' : '按全网成就排序'}}</text>
       </view>
-      <view class="badge-grid">
-        <view
-          wx:for="{{badges}}"
-          wx:key="id"
-          class="badge {{item.earned ? 'is-earned' : 'is-locked'}}"
-        >
-          <view class="badge-dot"></view>
-          <view class="badge-text">
-            <text class="badge-name">{{item.name}}</text>
-            <text class="badge-desc">{{item.desc}}</text>
+      <view class="tr-empty" wx:if="{{ranking.length === 0}}">
+        <text>{{isTeamView ? '暂无成员贡献' : '暂无个人成就'}}</text>
+        <text class="tr-empty-sub">{{isTeamView ? '在队伍中记录物品后即可上榜' : '记录并守护物品后即可上榜'}}</text>
+      </view>
+      <view
+        class="tr-item {{item.isMine ? 'is-mine' : ''}}"
+        wx:for="{{ranking}}"
+        wx:key="rank"
+      >
+        <view class="tr-rank {{item.rank <= 3 ? 'top3' : ''}}">#{{item.rank}}</view>
+        <view class="tr-main">
+          <view class="tr-name-row">
+            <text class="tr-name">{{item.name}}</text>
+            <text class="tr-mine" wx:if="{{item.isMine}}">我的</text>
           </view>
+          <text class="tr-sub">{{item.totalSaved}} 件避免过期 · 追踪 {{item.totalTracked}} 件</text>
+        </view>
+        <view class="tr-value">
+          <text class="tr-num">¥{{item.totalSavedValue}}</text>
+          <text class="tr-label">已省下</text>
         </view>
       </view>
     </view>
 
-    <!-- 分享 -->
-    <button class="share-btn" open-type="share">分享给好友</button>
+    <!-- 分享（个人视角） -->
+    <button class="share-btn" wx:if="{{!isTeamView}}" open-type="share">分享给好友</button>
 
-    <!-- 底部 -->
-    <view class="footer">
+    <!-- 底部（个人视角） -->
+    <view class="footer" wx:if="{{!isTeamView}}">
       <text>{{encourageText}}</text>
     </view>
   </block>

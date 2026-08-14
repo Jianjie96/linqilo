@@ -1,13 +1,13 @@
 <view class="container">
-  <!-- 当前绑定状态 -->
-  <view class="section-title">当前视角</view>
+  <!-- 当前绑定状态（决定消息推送范围） -->
+  <view class="section-title">当前绑定（决定推送）</view>
   <view class="card binding-card">
     <view class="binding-status">
       <view class="binding-icon icon {{boundGroupId ? 'icon-users-dark' : 'icon-user-dark'}}"></view>
       <text class="binding-name">{{boundTeamName}}</text>
     </view>
     <view class="binding-switch" wx:if="{{boundGroupId}}" bindtap="switchBinding" data-team-id="">
-      <text>切换到个人</text>
+      <text>绑定到个人</text>
     </view>
   </view>
 
@@ -24,7 +24,7 @@
   <view class="section-title">加入队伍</view>
   <view class="card">
     <view class="input-row">
-      <input class="team-input code-input" placeholder="输入 6 位邀请码" value="{{joinCode}}" bindinput="onJoinCodeInput" maxlength="6" />
+      <input class="team-input code-input" placeholder="输入6位邀请码" value="{{joinCode}}" bindinput="onJoinCodeInput" maxlength="6" />
       <button class="btn-create" bindtap="joinTeam">加入</button>
     </view>
   </view>
@@ -104,7 +104,7 @@
 
       <!-- 操作按钮 -->
       <view class="detail-actions">
-        <button class="btn-leave" bindtap="leaveTeam">退出队伍</button>
+        <button class="btn-leave" bindtap="leaveTeam">彻底退出</button>
       </view>
     </view>
   </view>

@@ -1,5 +1,5 @@
 // 组队管理云函数
-// action: create | join | leave | bind | getMy | getMembers | refreshCode
+// action: create | join | leave | bind | updateView | getMy | getMembers | refreshCode
 
 const cloud = require('wx-server-sdk')
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
@@ -10,7 +10,9 @@ const COLLECTIONS = {
   TEAMS: 'teams',
   MEMBERS: 'teamMembers',
   USERS: 'users',
-  ITEMS: 'items'
+  ITEMS: 'items',
+  TEAM_STATS: 'team_stats',
+  EVENTS: 'stat_events'
 }
 
 exports.main = async (event, context) => {
@@ -27,6 +29,8 @@ exports.main = async (event, context) => {
         return await leaveTeam(openid, event.teamId)
       case 'bind':
         return await bindTeam(openid, event.teamId) // teamId 为 null 表示绑定个人
+      case 'updateView':
+        return await updateView(openid, event.teamId) // teamId 为 null 表示个人视角（高频，轻量写库）
       case 'getMy':
         return await getMyTeams(openid)
       case 'getMembers':
@@ -71,12 +75,14 @@ async function createTeam(openid, name) {
     }
   })
 
-  // 更新用户表：加入队伍并绑定
+  // 更新用户表：加入队伍（不自动绑定，绑定由用户在队伍管理页手动设置）
   await upsertUser(openid, {
     addTeamId: teamId,
-    boundGroupId: teamId,
     updatedAt: new Date().toISOString()
   })
+
+  // 初始化队伍成就聚合
+  await ensureTeamStats(teamId)
 
   return {
     code: 0,
@@ -124,6 +130,9 @@ async function joinTeam(openid, inviteCode) {
     addTeamId: team.teamId,
     updatedAt: new Date().toISOString()
   })
+
+  // 确保队伍成就聚合存在（兼容旧队伍）
+  await ensureTeamStats(team.teamId)
 
   return {
     code: 0,
@@ -180,15 +189,21 @@ async function leaveTeam(openid, teamId) {
     const user = userRes.data[0]
     const newTeamIds = (Array.isArray(user.teamIds) ? user.teamIds : []).filter(id => id !== teamId)
     const newBound = user.boundGroupId === teamId ? null : user.boundGroupId
+    // 视角指向已退出的队伍时重置（绑定被清理则回退到绑定目标）
+    const newView = user.viewGroupId === teamId ? newBound : (user.viewGroupId || null)
 
     await db.collection(COLLECTIONS.USERS).doc(user._id).update({
       data: {
         teamIds: newTeamIds,
         boundGroupId: newBound,
+        viewGroupId: newView,
         updatedAt: new Date().toISOString()
       }
     })
   }
+
+  // 剥离该用户在队伍中的成就贡献（账本删除 + 队伍聚合扣减）
+  await stripTeamContributions(openid, teamId)
 
   // 检查队伍是否还有成员，如果没有则解散（清理副本）
   const remainRes = await db.collection(COLLECTIONS.MEMBERS)
@@ -210,6 +225,20 @@ async function leaveTeam(openid, teamId) {
       .get()
     for (const copy of copies.data) {
       await db.collection(COLLECTIONS.ITEMS).doc(copy._id).remove()
+    }
+
+    // 清理队伍成就聚合与残留账本事件
+    const tsDocs = await db.collection(COLLECTIONS.TEAM_STATS)
+      .where({ teamId })
+      .get()
+    for (const d of tsDocs.data) {
+      await db.collection(COLLECTIONS.TEAM_STATS).doc(d._id).remove()
+    }
+    const evDocs = await db.collection(COLLECTIONS.EVENTS)
+      .where({ teamId })
+      .get()
+    for (const d of evDocs.data) {
+      await db.collection(COLLECTIONS.EVENTS).doc(d._id).remove()
     }
   }
 
@@ -238,7 +267,29 @@ async function bindTeam(openid, teamId) {
   return { code: 0, data: { boundGroupId: teamId || null } }
 }
 
-// --- 获取我的队伍列表 + 当前绑定 ---
+// --- 切换视角（高频操作，同步到后端，不影响绑定与推送） ---
+async function updateView(openid, teamId) {
+  // teamId 为 null 表示个人视角
+  if (teamId) {
+    // 校验是否为该队伍成员
+    const memberRes = await db.collection(COLLECTIONS.MEMBERS)
+      .where({ teamId, openid })
+      .get()
+
+    if (memberRes.data.length === 0) {
+      return { code: -1, msg: '你不是该队伍的成员' }
+    }
+  }
+
+  await upsertUser(openid, {
+    viewGroupId: teamId || null,
+    updatedAt: new Date().toISOString()
+  })
+
+  return { code: 0, data: { viewGroupId: teamId || null } }
+}
+
+// --- 获取我的队伍列表 + 当前绑定 + 当前视角 ---
 async function getMyTeams(openid) {
   // 获取用户信息
   const userRes = await db.collection(COLLECTIONS.USERS)
@@ -249,6 +300,7 @@ async function getMyTeams(openid) {
   const rawTeamIds = user?.teamIds
   let teamIds = Array.isArray(rawTeamIds) ? rawTeamIds : []
   const boundGroupId = user?.boundGroupId || null
+  const viewGroupId = user?.viewGroupId || null
 
   // 历史数据被污染（teamIds 为非数组）：从成员表重建并回写修复
   if (user && rawTeamIds !== undefined && !Array.isArray(rawTeamIds)) {
@@ -264,7 +316,7 @@ async function getMyTeams(openid) {
   if (teamIds.length === 0) {
     return {
       code: 0,
-      data: { teams: [], boundGroupId: null }
+      data: { teams: [], boundGroupId: null, viewGroupId: null }
     }
   }
 
@@ -291,9 +343,12 @@ async function getMyTeams(openid) {
     })
   }
 
+  // 视角指向的队伍已不在我的队伍列表（如已退出），回退为个人视角
+  const validView = viewGroupId && teams.some(t => t.teamId === viewGroupId) ? viewGroupId : null
+
   return {
     code: 0,
-    data: { teams, boundGroupId }
+    data: { teams, boundGroupId, viewGroupId: validView }
   }
 }
 
@@ -399,7 +454,74 @@ async function upsertUser(openid, updates) {
     const initData = { openid, ...rest }
     initData.teamIds = addTeamId ? [addTeamId] : []
     if (initData.boundGroupId === undefined) initData.boundGroupId = null
+    if (initData.viewGroupId === undefined) initData.viewGroupId = null
     await db.collection(COLLECTIONS.USERS).add({ data: initData })
+  }
+}
+
+/**
+ * 确保队伍成就聚合记录存在（创建/加入队伍时初始化）
+ */
+async function ensureTeamStats(teamId) {
+  const res = await db.collection(COLLECTIONS.TEAM_STATS).where({ teamId }).get()
+  if (res.data.length > 0) return
+
+  await db.collection(COLLECTIONS.TEAM_STATS).add({
+    data: {
+      teamId,
+      totalTracked: 0,
+      totalSaved: 0,
+      totalSavedValue: 0,
+      totalExpired: 0,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    }
+  })
+}
+
+/**
+ * 剥离用户在某队伍的成就贡献：
+ * 删除该用户在该队伍维度的全部账本事件，并按类型/价值扣减队伍聚合
+ */
+async function stripTeamContributions(openid, teamId) {
+  const evRes = await db.collection(COLLECTIONS.EVENTS)
+    .where({ _openid: openid, teamId })
+    .limit(1000)
+    .get()
+
+  const events = evRes.data
+  if (events.length === 0) return
+
+  // 统计扣减量
+  const delta = { tracked: 0, saved: 0, savedValue: 0, expired: 0 }
+  for (const ev of events) {
+    if (ev.type === 'tracked') {
+      delta.tracked += 1
+    } else if (ev.type === 'saved') {
+      delta.saved += 1
+      delta.savedValue += ev.value || 0
+    } else if (ev.type === 'expired') {
+      delta.expired += 1
+    }
+  }
+
+  // 删除账本事件
+  for (const ev of events) {
+    await db.collection(COLLECTIONS.EVENTS).doc(ev._id).remove()
+  }
+
+  // 扣减队伍聚合
+  const tsRes = await db.collection(COLLECTIONS.TEAM_STATS).where({ teamId }).get()
+  if (tsRes.data.length > 0) {
+    await db.collection(COLLECTIONS.TEAM_STATS).doc(tsRes.data[0]._id).update({
+      data: {
+        totalTracked: _.inc(-delta.tracked),
+        totalSaved: _.inc(-delta.saved),
+        totalSavedValue: _.inc(-delta.savedValue),
+        totalExpired: _.inc(-delta.expired),
+        updatedAt: new Date().toISOString()
+      }
+    })
   }
 }
 

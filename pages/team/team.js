@@ -75,6 +75,8 @@ Page({
     try {
       const result = await syncUtil.createTeam(name)
       wx.hideLoading()
+      // 创建不自动绑定，仅把视角切到新队伍方便查看
+      app.switchView(result.data.teamId)
       wx.showToast({ title: '创建成功', icon: 'success' })
       this.setData({ newTeamName: '' })
       await this.loadData()
@@ -105,23 +107,32 @@ Page({
     }
   },
 
-  // --- 切换绑定 ---
-  async switchBinding(e) {
+  // --- 更换绑定（低频、写库；强提醒：绑定决定消息推送范围） ---
+  switchBinding(e) {
     const teamId = e.currentTarget.dataset.teamId || null
+    const name = teamId
+      ? (this.data.teams.find(t => t.teamId === teamId) || {}).name
+      : '个人'
 
-    wx.showLoading({ title: '切换中...' })
-    try {
-      await app.switchBinding(teamId)
-      wx.hideLoading()
-      wx.showToast({
-        title: teamId ? '已切换到队伍' : '已切换到个人',
-        icon: 'success'
-      })
-      await this.loadData()
-    } catch (err) {
-      wx.hideLoading()
-      wx.showToast({ title: err.message || '切换失败', icon: 'none' })
-    }
+    wx.showModal({
+      title: '确认绑定',
+      content: `绑定决定消息推送范围。\n更换后，推送将只针对「${name}」。\n确定将绑定目标更换为「${name}」吗？`,
+      confirmText: '确认绑定',
+      success: async (res) => {
+        if (!res.confirm) return
+
+        wx.showLoading({ title: '绑定中...' })
+        try {
+          await app.setBinding(teamId)
+          wx.hideLoading()
+          wx.showToast({ title: `已绑定「${name}」`, icon: 'success' })
+          await this.loadData()
+        } catch (err) {
+          wx.hideLoading()
+          wx.showToast({ title: err.message || '绑定失败', icon: 'none' })
+        }
+      }
+    })
   },
 
   // --- 查看队伍详情 ---
@@ -190,15 +201,15 @@ Page({
     })
   },
 
-  // --- 退出队伍 ---
+  // --- 彻底退出队伍（低频、强提醒：物品副本归还 + 成就贡献剥离 + 绑定重置） ---
   leaveTeam() {
     const teamId = this.data.detailTeam?.teamId
     const teamName = this.data.detailTeam?.name
     if (!teamId) return
 
     wx.showModal({
-      title: '退出队伍',
-      content: `退出「${teamName}」后，你在该队伍中创建的物品将复制一份留在队伍，原件回到你的个人空间。确定退出吗？`,
+      title: '彻底退出队伍',
+      content: `退出「${teamName}」后：\n· 你创建的物品将复制一份留给队伍，原件回到个人空间\n· 你的成就贡献将从队伍中剥离\n· 若该队伍是你的绑定目标，绑定将重置为个人，推送随之变化\n\n确定退出吗？`,
       confirmColor: '#FF3B30',
       confirmText: '确认退出',
       success: async (res) => {
@@ -210,6 +221,9 @@ Page({
           wx.hideLoading()
           wx.showToast({ title: '已退出', icon: 'success' })
           this.setData({ showDetail: false })
+          // 重新同步绑定/视角，并按新视角重新加载物品缓存
+          await app.loadTeamInfo()
+          app.reloadItems()
           await this.loadData()
         } catch (err) {
           wx.hideLoading()

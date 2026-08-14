@@ -47,9 +47,9 @@ Page({
     // 自定义页头
     statusBarHeight: 20,
     headerHeight: 88,
-    // 组队绑定视角
+    // 当前视角显示（本地内存态，切换不影响绑定）
     boundTeamName: '个人',
-    boundGroupId: null,
+    viewGroupId: null,
     showSwitcher: false,
     switcherOptions: [],
     _animateCards: false,
@@ -72,35 +72,47 @@ Page({
   },
 
   onShow() {
-    // 更新绑定状态
+    // 更新视角状态
     this._updateBindingDisplay()
 
-    if (this._dataLoaded) {
+    if (app.globalData.viewGroupId === undefined) {
+      // 云端初始化未完成，等视角就绪后再拉取（避免先按个人视角拉一遍）
+      this._dataLoaded = true
+      app.onCloudInited(() => {
+        this._updateBindingDisplay()
+        this.refreshItems()
+        this.loadAchievementBanner()
+      })
+      return
+    }
+
+    if (this._dataLoaded && app.globalData.items.length > 0) {
       // 从子页面返回：缓存已是最新（add/detail 直接修改了 globalData），只需重新渲染 UI
       this._renderItems()
       this._loadStats()
     } else {
-      // 首次进入：从云端拉取
+      // 首次进入 / 缓存被清空（视角已切换）：从云端拉取
       this._dataLoaded = true
       this.refreshItems()
     }
     this.loadAchievementBanner()
   },
 
-  // 更新绑定状态显示 + 构建切换选项
+  // 更新当前视角显示 + 构建切换选项
   _updateBindingDisplay() {
-    const { boundGroupId, boundTeamName, teams } = app.globalData
+    const { viewGroupId, teams } = app.globalData
+    const viewTeam = teams.find(t => t.teamId === viewGroupId)
     this.setData({
-      boundGroupId,
-      boundTeamName: boundTeamName || '个人',
+      viewGroupId,
+      boundTeamName: viewTeam ? viewTeam.name : '个人',
       // 构建切换选项：个人 + 已加入的队伍
       switcherOptions: [
-        { teamId: null, name: '个人', iconClass: 'icon-user-green', isActive: !boundGroupId },
+        { teamId: null, name: '个人', iconClass: 'icon-user-green', isActive: !viewGroupId },
         ...(teams || []).map(t => ({
           teamId: t.teamId,
           name: t.name,
           iconClass: 'icon-users-green',
-          isActive: t.teamId === boundGroupId
+          isActive: t.teamId === viewGroupId
         }))
       ]
     })
@@ -116,35 +128,28 @@ Page({
     this.setData({ showSwitcher: false })
   },
 
-  // 选择切换目标
-  async onSelectSwitcher(e) {
+  // 选择切换视角（高频、纯本地、不影响绑定与推送）
+  onSelectSwitcher(e) {
     const teamId = e.currentTarget.dataset.teamId || null
     this.setData({ showSwitcher: false })
 
-    // 已经是当前绑定，不操作
-    if (teamId === this.data.boundGroupId) return
+    // 已经是当前视角，不操作
+    if (teamId === this.data.viewGroupId) return
 
-    wx.showLoading({ title: '切换中...' })
-    try {
-      await app.switchBinding(teamId)
-      wx.hideLoading()
-      this._updateBindingDisplay()
-      this.refreshItems()
-      this.loadAchievementBanner()
-      wx.showToast({
-        title: teamId ? `已切换到队伍` : '已切换到个人',
-        icon: 'success'
-      })
-    } catch (err) {
-      wx.hideLoading()
-      wx.showToast({ title: err.message || '切换失败', icon: 'none' })
-    }
+    app.switchView(teamId)
+    this._updateBindingDisplay()
+    this.refreshItems()
+    this.loadAchievementBanner()
+    wx.showToast({
+      title: teamId ? '已切换到队伍' : '已切换到个人',
+      icon: 'success'
+    })
   },
 
   // 从云端拉取第一页并渲染
   async refreshItems() {
     this.setData({ loading: true })
-    const groupId = app.getBoundGroupId()
+    const groupId = app.getViewGroupId()
     try {
       const [{ items: pageItems, total }] = await Promise.all([
         syncUtil.fetchItemsPage(0, PAGE_SIZE, groupId),
@@ -166,7 +171,7 @@ Page({
 
   // 拉取云端全量统计（分页模式下本地数据是子集，统计必须来自云端）
   async _loadStats() {
-    const groupId = app.getBoundGroupId()
+    const groupId = app.getViewGroupId()
     try {
       const stats = await syncUtil.fetchItemStats(groupId)
       this.setData({
@@ -338,7 +343,7 @@ Page({
   // 从云端加载下一页
   async _loadMore() {
     this.setData({ loadingMore: true })
-    const groupId = app.getBoundGroupId()
+    const groupId = app.getViewGroupId()
     try {
       const { items: pageItems, total } = await syncUtil.fetchItemsPage(
         app.globalData.items.length,
@@ -423,7 +428,7 @@ Page({
         cached.saved = true
         cached.savedAt = new Date().toISOString()
       }
-      syncUtil.recordSave(savedValue)
+      syncUtil.recordSave(savedValue, app.getViewGroupId(), id)
       wx.hideLoading()
 
       // 卡片闪烁动画
@@ -464,10 +469,11 @@ Page({
     this.setData({ showBingo: false })
   },
 
-  // 加载成就横幅文案
+  // 加载成就横幅文案（按当前绑定视角：个人 / 队伍）
   async loadAchievementBanner() {
     try {
-      const result = await syncUtil.getLeaderboardStats()
+      const groupId = app.getViewGroupId()
+      const result = await syncUtil.getLeaderboardStats(groupId)
       const data = result.data
       if (!data) return
 
@@ -480,17 +486,21 @@ Page({
       const badges = this.calcBadges(data)
       const earnedBadges = badges.filter(b => b.earned).length
 
+      // 队伍视角：文案主语与排名口径换成队伍
+      const subjectPrefix = groupId ? '队伍' : ''
+      const rivalWord = groupId ? '团队' : '用户'
+
       let text = ''
       let sub = ''
       if (totalSaved > 0) {
-        text = `已避免 ${totalSaved} 件物品过期`
+        text = `${subjectPrefix}已避免 ${totalSaved} 件物品过期`
         if (data.totalUsers > 0 && data.percentile > 0) {
-          sub = `超过 ${data.percentile}% 的用户，查看详情`
+          sub = `超过 ${data.percentile}% 的${rivalWord}，查看详情`
         } else {
           sub = '查看你的成就详情'
         }
       } else if (data.totalTracked > 0) {
-        text = `正在追踪 ${data.totalTracked} 件物品`
+        text = `${subjectPrefix}正在追踪 ${data.totalTracked} 件物品`
         sub = '及时使用，避免过期'
       } else {
         text = '开启你的物品守护之旅'
@@ -625,9 +635,9 @@ Page({
           // 记录统计数据：未省钱且未过期 = 避免过期（已省钱物品标记时已记录，避免重复计数）
           const daysRemaining = item.daysRemaining
           if (!item.saved && daysRemaining >= 0) {
-            syncUtil.recordSave(item.value || 0)
+            syncUtil.recordSave(item.value || 0, app.getViewGroupId(), id)
           } else if (!item.saved) {
-            syncUtil.recordExpired()
+            syncUtil.recordExpired(app.getViewGroupId(), id)
           }
 
           wx.hideLoading()

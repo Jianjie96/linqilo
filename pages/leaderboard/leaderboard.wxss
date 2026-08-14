@@ -74,6 +74,16 @@
   margin-bottom: 44rpx;
 }
 
+/* 队伍视角：队伍名标签 */
+.level-tag.team-tag {
+  background: rgba(7, 193, 96, 0.12);
+}
+
+.level-tag.team-tag .level-name {
+  color: #07C160;
+  font-weight: 600;
+}
+
 .level-mark {
   font-size: 22rpx;
   color: #07C160;
@@ -342,4 +352,107 @@
   color: #BBB;
   line-height: 1.9;
   letter-spacing: 1rpx;
+}
+
+/* ── 排行列表 ── */
+.tr-empty {
+  padding: 160rpx 0;
+  text-align: center;
+  color: #BBB;
+  font-size: 26rpx;
+  letter-spacing: 2rpx;
+}
+
+.tr-empty-sub {
+  display: block;
+  font-size: 22rpx;
+  color: #CCC;
+  margin-top: 12rpx;
+}
+
+.tr-item {
+  display: flex;
+  align-items: center;
+  gap: 24rpx;
+  padding: 28rpx 26rpx;
+  margin-bottom: 20rpx;
+  border-radius: 18rpx;
+  background: #fff;
+  border: 2rpx solid transparent;
+  transition: all 0.2s ease;
+}
+
+.tr-item.is-mine {
+  border-color: #07C160;
+  background: linear-gradient(180deg, #F0FBF4, #fff);
+}
+
+.tr-rank {
+  width: 76rpx;
+  font-size: 32rpx;
+  font-weight: 700;
+  color: #BBB;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.tr-rank.top3 {
+  color: #07C160;
+}
+
+.tr-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.tr-name-row {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+}
+
+.tr-name {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: #1A1A1C;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tr-mine {
+  flex-shrink: 0;
+  padding: 2rpx 14rpx;
+  border-radius: 100rpx;
+  background: #07C160;
+  color: #fff;
+  font-size: 20rpx;
+  line-height: 1.6;
+}
+
+.tr-sub {
+  font-size: 22rpx;
+  color: #999;
+  margin-top: 6rpx;
+}
+
+.tr-value {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  flex-shrink: 0;
+}
+
+.tr-num {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: #07C160;
+}
+
+.tr-label {
+  font-size: 20rpx;
+  color: #BBB;
+  margin-top: 4rpx;
 }

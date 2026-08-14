@@ -1,3 +1,4 @@
+const app = getApp()
 const syncUtil = require('../../utils/sync.js')
 const shareMixin = require('../../utils/share.js')
 
@@ -35,6 +36,9 @@ Page({
   ...shareMixin,
   data: {
     loading: true,
+    // 跟随视角：个人视角 = 个人统计 + 全体个人排行；队伍视角 = 队伍统计 + 队内成员排行
+    isTeamView: false,
+    teamName: '',
     stats: {
       totalTracked: 0,
       totalSaved: 0,
@@ -48,51 +52,57 @@ Page({
     levelProgress: 0,
     badges: [],
     earnedBadges: 0,
-    encourageText: ''
+    encourageText: '',
+    ranking: []
   },
+
+  _lastTeamId: null,
 
   onLoad() {
     this.loadStats()
   },
 
   onShow() {
-    if (!this.data.loading) {
-      this.loadStats()
+    // 视角可能已在首页切换（或从队伍页更换绑定），按当前视角刷新
+    const teamId = app.getViewGroupId()
+    if (this._lastTeamId !== teamId) {
+      this.loadStats(teamId)
     }
   },
 
-  async loadStats() {
+  async loadStats(teamId) {
+    if (teamId === undefined) teamId = app.getViewGroupId()
+    this._lastTeamId = teamId
     this.setData({ loading: true })
 
+    const isTeamView = !!teamId
+
     try {
-      const result = await syncUtil.getLeaderboardStats()
-      const stats = result.data || {
-        totalTracked: 0,
-        totalSaved: 0,
-        totalExpired: 0,
-        percentile: 0,
-        rank: 0,
-        totalUsers: 0
+      const result = await syncUtil.getLeaderboardStats(teamId)
+      const data = result.data || {}
+      const stats = {
+        totalTracked: data.totalTracked || 0,
+        totalSaved: data.totalSaved || 0,
+        totalExpired: data.totalExpired || 0,
+        percentile: data.percentile || 0,
+        rank: data.rank || 0,
+        totalUsers: data.totalUsers || 0
       }
 
       // 守护率：避免过期 / (避免过期 + 已过期)
       const totalHandled = stats.totalSaved + stats.totalExpired
       const saveRate = totalHandled > 0 ? Math.round((stats.totalSaved / totalHandled) * 100) : 0
 
-      // 等级信息
+      // 个人视角才有等级/徽章（队伍视角展示队内排行）
       const levelInfo = this.calcLevel(stats.totalSaved)
-
-      // 等级进度
       const levelProgress = this.calcLevelProgress(stats.totalSaved, levelInfo)
-
-      // 徽章
       const badges = this.calcBadges(stats)
       const earnedBadges = badges.filter(b => b.earned).length
-
-      // 鼓励语
       const encourageText = this.getEncourage(stats, levelInfo)
 
       this.setData({
+        isTeamView,
+        teamName: isTeamView ? this.findTeamName(teamId) : '',
         stats,
         saveRate,
         levelInfo,
@@ -100,6 +110,7 @@ Page({
         badges,
         earnedBadges,
         encourageText,
+        ranking: data.ranking || [],
         loading: false
       })
     } catch (err) {
@@ -108,6 +119,8 @@ Page({
       const stats = { totalTracked: 0, totalSaved: 0, totalExpired: 0, percentile: 0, rank: 0, totalUsers: 0 }
       const levelInfo = this.calcLevel(0)
       this.setData({
+        isTeamView,
+        teamName: isTeamView ? this.findTeamName(teamId) : '',
         stats,
         saveRate: 0,
         levelInfo,
@@ -115,9 +128,16 @@ Page({
         badges: this.calcBadges(stats),
         earnedBadges: 0,
         encourageText: ENCOURAGES.zero,
+        ranking: [],
         loading: false
       })
     }
+  },
+
+  // 查找视角对应的队伍名称
+  findTeamName(teamId) {
+    const team = app.globalData.teams.find(t => t.teamId === teamId)
+    return team ? team.name : '队伍'
   },
 
   // 计算等级
@@ -179,13 +199,20 @@ Page({
 
   // 下拉刷新
   async onPullDownRefresh() {
-    await this.loadStats()
+    await this.loadStats(app.getViewGroupId())
     wx.stopPullDownRefresh()
   },
 
   // 分享
   onShareAppMessage() {
-    const { stats, levelInfo } = this.data
+    const { stats, isTeamView } = this.data
+    if (isTeamView) {
+      return {
+        title: `我们队伍已避免${stats.totalSaved}件物品过期，一起守护物品吧！`,
+        path: '/pages/leaderboard/leaderboard',
+        imageUrl: ''
+      }
+    }
     return {
       title: `我已成功避免了${stats.totalSaved}件物品过期，${stats.totalUsers > 0 ? `超过${stats.percentile}%的用户！` : '快来挑战我吧！'}`,
       path: '/pages/leaderboard/leaderboard',

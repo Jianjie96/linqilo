@@ -113,13 +113,13 @@ Page({
       await app.updateItem(this.itemId, {
         saved: true,
         savedAt: new Date().toISOString()
-      })
+      }, item.groupId || null)
       const cached = app.globalData.items.find(i => i.id === this.itemId)
       if (cached) {
         cached.saved = true
         cached.savedAt = new Date().toISOString()
       }
-      syncUtil.recordSave(parseFloat(item.value) || 0)
+      syncUtil.recordSave(parseFloat(item.value) || 0, item.groupId || null, item.id)
       wx.hideLoading()
       wx.showToast({ title: '已省钱！', icon: 'success' })
       this.loadItem()
@@ -152,7 +152,7 @@ Page({
         productionDate: editProductionDate,
         alertDays: editAlertDays,
         value: parseFloat(editValue) || 0
-      })
+      }, this.data.item.groupId || null)
       wx.hideLoading()
       this.setData({ isEditing: false })
       this.loadItem()
@@ -175,13 +175,15 @@ Page({
         if (res.confirm) {
           wx.showLoading({ title: '删除中...' })
           try {
-            await app.deleteItem(this.itemId)
+            await app.deleteItem(this.itemId, this.data.item.groupId || null)
 
             // 记录统计数据：未省钱且未过期 = 避免过期（已省钱物品标记时已记录，避免重复计数）
+            // 维度按物品归属判定：队伍物品记队伍，个人物品记个人
+            const groupId = this.data.item.groupId || null
             if (!this.data.item.saved && this.data.daysRemaining >= 0) {
-              syncUtil.recordSave(parseFloat(this.data.item.value) || 0)
+              syncUtil.recordSave(parseFloat(this.data.item.value) || 0, groupId, this.data.item.id)
             } else if (!this.data.item.saved) {
-              syncUtil.recordExpired()
+              syncUtil.recordExpired(groupId, this.data.item.id)
             }
 
             wx.hideLoading()
