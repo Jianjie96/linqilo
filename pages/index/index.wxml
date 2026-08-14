@@ -127,7 +127,7 @@
   </view>
 
   <!-- 筛选标签 -->
-  <view class="filter-bar">
+  <view class="filter-bar" style="top: {{headerHeight}}px;">
     <view class="filter-tag {{filterTab === 'all' ? 'active' : ''}}" bindtap="onFilterTab" data-tab="all">全部</view>
     <view class="filter-tag {{filterTab === 'safe' ? 'active' : ''}}" bindtap="onFilterTab" data-tab="safe">安全</view>
     <view class="filter-tag {{filterTab === 'warning' ? 'active' : ''}}" bindtap="onFilterTab" data-tab="warning">临期</view>

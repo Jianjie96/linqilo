@@ -374,7 +374,8 @@ page {
 .filter-bar {
   position: -webkit-sticky;
   position: sticky;
-  top: 0;
+  /* sticky 顶部偏移由内联样式 top: {{headerHeight}}px 控制，
+     因为页面是自定义导航，固定的自定义页头高度为状态栏 + 44px */
   z-index: 50;
   background: #F5F5F5;
   display: flex;
