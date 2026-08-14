@@ -8,7 +8,10 @@
 
     <block wx:if="{{cloudEnabled}}">
       <view wx:if="{{!isSubscribed}}" class="notify-action">
-        <button class="btn-primary" bindtap="subscribeNotification">🔔 开启临期通知</button>
+        <button class="btn-primary btn-with-icon" bindtap="subscribeNotification">
+          <view class="icon icon-bell-white btn-icon"></view>
+          <text>开启临期通知</text>
+        </button>
         <text class="notify-hint">需要授权订阅消息权限</text>
       </view>
 
@@ -36,13 +39,15 @@
   <view class="section-title">数据管理</view>
   <view class="card">
     <view class="settings-item" bindtap="exportData">
-      <text class="settings-item-label">📋 导出数据</text>
+      <view class="settings-item-icon icon icon-download-dark"></view>
+      <text class="settings-item-label">导出数据</text>
       <text class="settings-item-value">{{totalItems}} 条记录</text>
-      <text class="settings-item-arrow">›</text>
+      <view class="settings-item-arrow icon icon-chevron-right-gray"></view>
     </view>
     <view class="settings-item" bindtap="clearAllData">
-      <text class="settings-item-label">🗑️ 清除所有数据</text>
-      <text class="settings-item-arrow">›</text>
+      <view class="settings-item-icon icon icon-trash-dark"></view>
+      <text class="settings-item-label">清除所有数据</text>
+      <view class="settings-item-arrow icon icon-chevron-right-gray"></view>
     </view>
   </view>
 
@@ -50,9 +55,10 @@
   <view class="section-title">组队共享</view>
   <view class="card">
     <view class="settings-item" bindtap="goTeam">
-      <text class="settings-item-label">👥 队伍管理</text>
+      <view class="settings-item-icon icon icon-users-dark"></view>
+      <text class="settings-item-label">队伍管理</text>
       <text class="settings-item-value">{{boundTeamName}}</text>
-      <text class="settings-item-arrow">›</text>
+      <view class="settings-item-arrow icon icon-chevron-right-gray"></view>
     </view>
   </view>
 
@@ -60,13 +66,15 @@
   <view class="section-title">关于</view>
   <view class="card">
     <view class="settings-item" bindtap="goHelp">
-      <text class="settings-item-label">📖 使用帮助</text>
-      <text class="settings-item-arrow">›</text>
+      <view class="settings-item-icon icon icon-book-dark"></view>
+      <text class="settings-item-label">使用帮助</text>
+      <view class="settings-item-arrow icon icon-chevron-right-gray"></view>
     </view>
     <view class="settings-item" bindtap="showAbout">
+      <view class="settings-item-icon icon icon-info-dark"></view>
       <text class="settings-item-label">关于「叮咚到期」</text>
       <text class="settings-item-value">v{{aboutInfo.version}}</text>
-      <text class="settings-item-arrow">›</text>
+      <view class="settings-item-arrow icon icon-chevron-right-gray"></view>
     </view>
   </view>
 

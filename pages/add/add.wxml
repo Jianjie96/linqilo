@@ -2,11 +2,11 @@
   <!-- 输入模式切换 -->
   <view class="mode-tabs">
     <view class="mode-tab {{inputMode === 'manual' ? 'active' : ''}}" bindtap="switchToManual">
-      <text class="tab-icon">✏️</text>
+      <view class="tab-icon icon {{inputMode === 'manual' ? 'icon-pencil-green' : 'icon-pencil-gray'}}"></view>
       <text>手动输入</text>
     </view>
     <view class="mode-tab {{inputMode === 'photo' ? 'active' : ''}}" bindtap="switchToPhoto">
-      <text class="tab-icon">📷</text>
+      <view class="tab-icon icon {{inputMode === 'photo' ? 'icon-camera-green' : 'icon-camera-gray'}}"></view>
       <text>拍照对照</text>
     </view>
   </view>
@@ -19,13 +19,19 @@
 
       <!-- 识别中状态 -->
       <view class="ocr-loading" wx:if="{{isProcessing}}">
-        <text class="loading-text">🔍 正在识别图片中的文字...</text>
+        <view class="loading-row">
+          <view class="icon icon-search-green loading-icon"></view>
+          <text class="loading-text">正在识别图片中的文字...</text>
+        </view>
       </view>
 
       <!-- OCR 识别结果 -->
       <view class="ocr-result" wx:if="{{ocrResult && !isProcessing}}">
         <view class="result-header">
-          <text class="result-title">✅ 识别结果（可修改）</text>
+          <view class="result-title-row">
+            <view class="icon icon-check-circle-green result-title-icon"></view>
+            <text class="result-title">识别结果（可修改）</text>
+          </view>
           <text class="retry-btn" bindtap="retryOCR">重新解析</text>
         </view>
         <textarea
@@ -39,21 +45,27 @@
 
       <!-- 识别失败提示 -->
       <view class="ocr-fail" wx:if="{{!ocrResult && !isProcessing}}">
-        <text class="fail-text">😅 未识别到文字，可手动填写下方表单</text>
+        <view class="fail-row">
+          <view class="icon icon-info-gray fail-icon"></view>
+          <text class="fail-text">未识别到文字，可手动填写下方表单</text>
+        </view>
       </view>
 
-      <view class="photo-close-btn" bindtap="closePhoto">✖ 关闭图片</view>
+      <view class="photo-close-btn" bindtap="closePhoto">
+        <view class="icon icon-close-gray photo-close-icon"></view>
+        <text>关闭图片</text>
+      </view>
     </view>
 
     <!-- 未拍照时显示操作按钮 -->
     <view wx:if="{{!ocrImagePath}}" class="ocr-actions">
       <view class="ocr-btn" bindtap="takePhoto">
-        <text class="ocr-btn-icon">📸</text>
+        <view class="ocr-btn-icon icon icon-camera-green"></view>
         <text class="ocr-btn-text">拍照</text>
         <text class="ocr-btn-desc">拍摄包装上的日期标签</text>
       </view>
       <view class="ocr-btn" bindtap="chooseFromAlbum">
-        <text class="ocr-btn-icon">🖼️</text>
+        <view class="ocr-btn-icon icon icon-image-green"></view>
         <text class="ocr-btn-text">从相册选择</text>
         <text class="ocr-btn-desc">选择已有的包装图片</text>
       </view>
@@ -80,7 +92,7 @@
       <picker mode="selector" range="{{categories}}" value="{{categoryIndex}}" bindchange="onCategoryChange">
         <view class="form-input picker-value">
           <text>{{categories[categoryIndex]}}</text>
-          <text class="picker-arrow">▼</text>
+          <view class="picker-arrow icon icon-chevron-down-gray"></view>
         </view>
       </picker>
     </view>
@@ -104,7 +116,7 @@
       <picker mode="date" value="{{productionDate}}" bindchange="onProductionDateChange">
         <view class="form-input picker-value">
           <text class="{{productionDate ? '' : 'placeholder'}}">{{productionDate || '选择生产日期（可选）'}}</text>
-          <text class="picker-arrow">▼</text>
+          <view class="picker-arrow icon icon-chevron-down-gray"></view>
         </view>
       </picker>
     </view>
@@ -122,7 +134,7 @@
         <picker mode="date" value="{{expiryDate}}" bindchange="onExpiryDateChange">
           <view class="form-input picker-value">
             <text class="{{expiryDate ? '' : 'placeholder'}}">{{expiryDate || '选择到期日期 *'}}</text>
-            <text class="picker-arrow">▼</text>
+            <view class="picker-arrow icon icon-chevron-down-gray"></view>
           </view>
         </picker>
       </view>
@@ -175,12 +187,12 @@
 
   <!-- 通知未开启提示 -->
   <view class="notify-tip" wx:if="{{cloudEnabled && !isSubscribed}}" bindtap="goSettingsForNotify">
-    <text class="notify-tip-icon">🔔</text>
+    <view class="notify-tip-icon icon icon-bell-green"></view>
     <view class="notify-tip-content">
       <text class="notify-tip-title">开启临期通知</text>
       <text class="notify-tip-desc">物品即将到期时通过微信提醒你，避免遗忘</text>
     </view>
-    <text class="notify-tip-arrow">›</text>
+    <view class="notify-tip-arrow icon icon-chevron-right-green"></view>
   </view>
 
   <view class="submit-area">

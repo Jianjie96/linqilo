@@ -12,7 +12,8 @@
 
 .hero-icon {
   display: block;
-  font-size: 64rpx;
+  width: 72rpx;
+  height: 72rpx;
   margin-bottom: 16rpx;
 }
 
@@ -74,7 +75,8 @@
 }
 
 .concept-icon {
-  font-size: 40rpx;
+  width: 44rpx;
+  height: 44rpx;
   flex-shrink: 0;
   margin-top: 4rpx;
 }
@@ -139,7 +141,8 @@
 }
 
 .tip-icon {
-  font-size: 28rpx;
+  width: 32rpx;
+  height: 32rpx;
   flex-shrink: 0;
 }
 

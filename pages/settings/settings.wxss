@@ -107,12 +107,18 @@
 .settings-item {
   display: flex;
   align-items: center;
+  gap: 20rpx;
   padding: 28rpx 0;
   border-bottom: 1rpx solid #F5F5F5;
 }
 
 .settings-item:last-child {
   border-bottom: none;
+}
+
+.settings-item-icon {
+  width: 34rpx;
+  height: 34rpx;
 }
 
 .settings-item-label {
@@ -128,8 +134,21 @@
 }
 
 .settings-item-arrow {
-  font-size: 36rpx;
-  color: #CCC;
+  width: 28rpx;
+  height: 28rpx;
+}
+
+/* 带图标的按钮 */
+.btn-with-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12rpx;
+}
+
+.btn-icon {
+  width: 34rpx;
+  height: 34rpx;
 }
 
 /* 底部 */

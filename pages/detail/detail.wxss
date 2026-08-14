@@ -66,6 +66,12 @@
   line-height: 1;
 }
 
+/* 已省钱庆祝图标 */
+.countdown-saved-icon {
+  width: 110rpx;
+  height: 110rpx;
+}
+
 .countdown-unit {
   font-size: 30rpx;
   font-weight: 500;
@@ -199,8 +205,8 @@
   display: block;
   flex-shrink: 0;
   white-space: nowrap;
-  font-size: 28rpx;
-  color: #F6D98D;
+  width: 30rpx;
+  height: 30rpx;
 }
 
 .btn-save-label {
@@ -295,6 +301,6 @@
 }
 
 .picker-arrow {
-  font-size: 24rpx;
-  color: #CCC;
+  width: 26rpx;
+  height: 26rpx;
 }

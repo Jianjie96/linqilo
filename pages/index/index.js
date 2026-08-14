@@ -95,11 +95,11 @@ Page({
       boundTeamName: boundTeamName || '个人',
       // 构建切换选项：个人 + 已加入的队伍
       switcherOptions: [
-        { teamId: null, name: '个人', icon: '👤', isActive: !boundGroupId },
+        { teamId: null, name: '个人', iconClass: 'icon-user-green', isActive: !boundGroupId },
         ...(teams || []).map(t => ({
           teamId: t.teamId,
           name: t.name,
-          icon: '👥',
+          iconClass: 'icon-users-green',
           isActive: t.teamId === boundGroupId
         }))
       ]

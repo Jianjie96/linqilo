@@ -3,7 +3,7 @@
   <view class="section-title">当前视角</view>
   <view class="card binding-card">
     <view class="binding-status">
-      <text class="binding-icon">{{boundGroupId ? '👥' : '👤'}}</text>
+      <view class="binding-icon icon {{boundGroupId ? 'icon-users-green' : 'icon-user-green'}}"></view>
       <text class="binding-name">{{boundTeamName}}</text>
     </view>
     <view class="binding-switch" wx:if="{{boundGroupId}}" bindtap="switchBinding" data-team-id="">
@@ -35,7 +35,7 @@
     <!-- 个人视角选项 -->
     <view class="team-item {{!boundGroupId ? 'team-item-bound' : ''}}" bindtap="switchBinding" data-team-id="">
       <view class="team-item-left">
-        <text class="team-item-icon">👤</text>
+        <view class="team-item-icon icon icon-user-green"></view>
         <view class="team-item-info">
           <text class="team-item-name">个人空间</text>
           <text class="team-item-hint">仅自己可见</text>
@@ -51,7 +51,7 @@
       <block wx:for="{{teams}}" wx:key="teamId">
         <view class="team-item {{item.isBound ? 'team-item-bound' : ''}}">
           <view class="team-item-left" bindtap="showTeamDetail" data-team-id="{{item.teamId}}">
-            <text class="team-item-icon">👥</text>
+            <view class="team-item-icon icon icon-users-green"></view>
             <view class="team-item-info">
               <text class="team-item-name">{{item.name}}</text>
               <text class="team-item-hint">{{item.memberCount}} 人</text>
@@ -76,7 +76,7 @@
     <view class="detail-card" catchtap="">
       <view class="detail-header">
         <text class="detail-title">{{detailTeam.name}}</text>
-        <text class="detail-close" bindtap="hideTeamDetail">✕</text>
+        <view class="detail-close icon icon-close-gray" bindtap="hideTeamDetail"></view>
       </view>
 
       <!-- 邀请码 -->

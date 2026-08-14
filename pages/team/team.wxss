@@ -32,7 +32,8 @@
 }
 
 .binding-icon {
-  font-size: 40rpx;
+  width: 44rpx;
+  height: 44rpx;
 }
 
 .binding-name {
@@ -117,7 +118,8 @@
 }
 
 .team-item-icon {
-  font-size: 36rpx;
+  width: 38rpx;
+  height: 38rpx;
 }
 
 .team-item-info {
@@ -211,9 +213,9 @@
 }
 
 .detail-close {
-  font-size: 36rpx;
-  color: #999;
-  padding: 8rpx;
+  width: 40rpx;
+  height: 40rpx;
+  padding: 6rpx;
 }
 
 .detail-section {

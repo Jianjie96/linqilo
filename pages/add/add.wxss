@@ -27,7 +27,8 @@
 }
 
 .tab-icon {
-  font-size: 32rpx;
+  width: 32rpx;
+  height: 32rpx;
 }
 
 /* OCR 区域 */
@@ -54,7 +55,8 @@
 }
 
 .ocr-btn-icon {
-  font-size: 64rpx;
+  width: 72rpx;
+  height: 72rpx;
   margin-bottom: 16rpx;
 }
 
@@ -90,6 +92,17 @@
   padding: 24rpx 0;
 }
 
+.loading-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 10rpx;
+}
+
+.loading-icon {
+  width: 30rpx;
+  height: 30rpx;
+}
+
 .loading-text {
   font-size: 28rpx;
   color: #07C160;
@@ -105,6 +118,17 @@
   justify-content: space-between;
   align-items: center;
   margin-bottom: 12rpx;
+}
+
+.result-title-row {
+  display: flex;
+  align-items: center;
+  gap: 10rpx;
+}
+
+.result-title-icon {
+  width: 30rpx;
+  height: 30rpx;
 }
 
 .result-title {
@@ -138,18 +162,39 @@
   padding: 20rpx 0;
 }
 
+.fail-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10rpx;
+}
+
+.fail-icon {
+  width: 30rpx;
+  height: 30rpx;
+}
+
 .fail-text {
   font-size: 26rpx;
   color: #999;
 }
 
 .photo-close-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8rpx;
   text-align: center;
   font-size: 26rpx;
   color: #999;
   padding: 16rpx 0;
   border-bottom: 1rpx solid #F0F0F0;
   margin-bottom: 20rpx;
+}
+
+.photo-close-icon {
+  width: 28rpx;
+  height: 28rpx;
 }
 
 .ocr-result {
@@ -214,8 +259,8 @@
 }
 
 .picker-arrow {
-  font-size: 24rpx;
-  color: #CCC;
+  width: 26rpx;
+  height: 26rpx;
 }
 
 /* 保质期切换 */
@@ -288,7 +333,8 @@
 }
 
 .notify-tip-icon {
-  font-size: 40rpx;
+  width: 44rpx;
+  height: 44rpx;
   margin-right: 16rpx;
 }
 
@@ -311,8 +357,8 @@
 }
 
 .notify-tip-arrow {
-  font-size: 32rpx;
-  color: #07C160;
+  width: 28rpx;
+  height: 28rpx;
 }
 
 /* 提交区域 */

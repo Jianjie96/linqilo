@@ -39,7 +39,8 @@ page {
 }
 
 .header-switch-icon {
-  font-size: 28rpx;
+  width: 30rpx;
+  height: 30rpx;
 }
 
 .header-switch-name {
@@ -53,8 +54,8 @@ page {
 }
 
 .header-switch-arrow {
-  font-size: 22rpx;
-  color: rgba(255, 255, 255, 0.8);
+  width: 24rpx;
+  height: 24rpx;
   transition: transform 0.2s;
 }
 
@@ -109,7 +110,8 @@ page {
 }
 
 .switcher-item-icon {
-  font-size: 32rpx;
+  width: 34rpx;
+  height: 34rpx;
 }
 
 .switcher-item-name {
@@ -127,9 +129,8 @@ page {
 }
 
 .switcher-item-check {
-  font-size: 28rpx;
-  color: #07C160;
-  font-weight: 700;
+  width: 30rpx;
+  height: 30rpx;
 }
 
 .switcher-divider {
@@ -328,8 +329,8 @@ page {
 }
 
 .ac-card-arrow {
-  font-size: 32rpx;
-  color: rgba(255, 255, 255, 0.2);
+  width: 24rpx;
+  height: 24rpx;
 }
 
 .stat-item {
@@ -652,7 +653,8 @@ page {
 }
 
 .value-reminder-icon {
-  font-size: 24rpx;
+  width: 26rpx;
+  height: 26rpx;
 }
 
 .value-reminder-text {
@@ -736,8 +738,8 @@ page {
 }
 
 .fab-icon {
-  font-size: 36rpx;
-  font-weight: 300;
+  width: 36rpx;
+  height: 36rpx;
   line-height: 1;
 }
 
@@ -756,7 +758,8 @@ page {
 }
 
 .settings-icon {
-  font-size: 32rpx;
+  width: 36rpx;
+  height: 36rpx;
 }
 
 .settings-label {
@@ -787,6 +790,8 @@ page {
 }
 
 .empty-icon {
+  width: 140rpx;
+  height: 140rpx;
   animation: emptyIconBounce 2.5s ease-in-out infinite;
 }
 
@@ -795,7 +800,7 @@ page {
   50% { transform: scale(1.1); }
 }
 
-/* ===== 🎉 Bingo 庆祝弹层 ===== */
+/* ===== Bingo 庆祝弹层 ===== */
 .bingo-overlay {
   position: fixed;
   top: 0;
@@ -839,7 +844,8 @@ page {
 }
 
 .bingo-emoji {
-  font-size: 96rpx;
+  width: 110rpx;
+  height: 110rpx;
   animation: bingoEmoji 0.6s ease 0.2s both;
 }
 

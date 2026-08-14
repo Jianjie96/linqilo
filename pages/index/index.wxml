@@ -4,9 +4,9 @@
     <view class="header-content" style="height: 44px;">
       <!-- 左侧：视角切换 -->
       <view class="header-left" bindtap="toggleSwitcher">
-        <text class="header-switch-icon">{{boundGroupId ? '👥' : '👤'}}</text>
+        <view class="header-switch-icon icon {{boundGroupId ? 'icon-users-white' : 'icon-user-white'}}"></view>
         <text class="header-switch-name">{{boundTeamName}}</text>
-        <text class="header-switch-arrow {{showSwitcher ? 'arrow-up' : ''}}">▾</text>
+        <view class="header-switch-arrow icon icon-chevron-down-white {{showSwitcher ? 'arrow-up' : ''}}"></view>
       </view>
     </view>
   </view>
@@ -25,14 +25,14 @@
         bindtap="onSelectSwitcher"
       >
         <view class="switcher-item-left">
-          <text class="switcher-item-icon">{{item.icon}}</text>
+          <view class="switcher-item-icon icon {{item.iconClass}}"></view>
           <text class="switcher-item-name">{{item.name}}</text>
         </view>
-        <text class="switcher-item-check" wx:if="{{item.isActive}}">✓</text>
+        <view class="switcher-item-check icon icon-check-green" wx:if="{{item.isActive}}"></view>
       </view>
       <view class="switcher-divider"></view>
       <view class="switcher-item switcher-manage" bindtap="goTeam">
-        <text class="switcher-item-icon">📋</text>
+        <view class="switcher-item-icon icon icon-clipboard-green"></view>
         <text class="switcher-item-name">队伍管理</text>
       </view>
     </view>
@@ -121,7 +121,7 @@
       </view>
       <view class="ac-card-foot" wx:if="{{achievementSub}}">
         <text class="ac-card-sub">{{achievementSub}}</text>
-        <text class="ac-card-arrow">›</text>
+        <view class="ac-card-arrow icon icon-chevron-right-champagne"></view>
       </view>
     </view>
   </view>
@@ -196,7 +196,7 @@
             </view>
             <!-- 已省钱庆祝标识 -->
             <view class="value-reminder value-reminder-saved" wx:if="{{item.saved}}">
-              <text class="value-reminder-icon">🎉</text>
+              <view class="value-reminder-icon icon icon-party-gold"></view>
               <text class="value-reminder-text">已省钱 ¥{{item.value}}</text>
             </view>
           </view>
@@ -218,17 +218,17 @@
 
   <!-- 空状态 -->
   <view class="empty-state" wx:if="{{isEmpty}}">
-    <text class="empty-icon">📦</text>
+    <view class="empty-icon icon icon-package-gray"></view>
     <text class="empty-text">还没有物品</text>
     <text class="empty-text">点击下方按钮添加你的第一个物品吧</text>
   </view>
 
   </view>
 
-  <!-- 🎉 Bingo 庆祝弹层 -->
+  <!-- Bingo 庆祝弹层 -->
   <view class="bingo-overlay" wx:if="{{showBingo}}" bindtap="dismissBingo">
     <view class="bingo-card">
-      <text class="bingo-emoji">🎉</text>
+      <view class="bingo-emoji icon icon-party-gold"></view>
       <text class="bingo-title">省下了</text>
       <text class="bingo-amount">¥{{bingoAmount}}</text>
       <text class="bingo-item">{{bingoItemName}}</text>
@@ -240,11 +240,11 @@
   <view class="bottom-bar">
     <view class="bottom-left"></view>
     <button class="fab-pill" bindtap="goAdd">
-      <text class="fab-icon">＋</text>
+      <view class="fab-icon icon icon-plus-white"></view>
       <text class="fab-label">添加物品</text>
     </button>
     <view class="settings-entry" bindtap="goSettings">
-      <text class="settings-icon">⚙️</text>
+      <view class="settings-icon icon icon-gear-gray"></view>
       <text class="settings-label">设置</text>
     </view>
   </view>

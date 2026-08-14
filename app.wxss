@@ -1,3 +1,6 @@
+/* 全局图标库（Lucide 风格线性 SVG） */
+@import "icons.wxss";
+
 /* 全局样式 */
 page {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;

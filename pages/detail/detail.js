@@ -121,7 +121,7 @@ Page({
       }
       syncUtil.recordSave(parseFloat(item.value) || 0)
       wx.hideLoading()
-      wx.showToast({ title: '🎉 已省钱！', icon: 'success' })
+      wx.showToast({ title: '已省钱！', icon: 'success' })
       this.loadItem()
     } catch (err) {
       wx.hideLoading()

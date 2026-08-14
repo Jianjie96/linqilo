@@ -1,7 +1,7 @@
 <view class="container">
   <!-- 欢迎 -->
   <view class="hero">
-    <text class="hero-icon">📖</text>
+    <view class="hero-icon icon icon-book-green"></view>
     <text class="hero-title">叮咚到期 · 使用帮助</text>
     <text class="hero-sub">了解组队共享的核心概念，轻松管理你的物品</text>
   </view>
@@ -14,7 +14,7 @@
     </view>
     <view class="card">
       <view class="concept-row">
-        <view class="concept-icon">🤝</view>
+        <view class="concept-icon icon icon-handshake-green"></view>
         <view class="concept-body">
           <text class="concept-title">加入 = 成员资格</text>
           <text class="concept-desc">加入一个队伍后，你可以查看和操作队伍中的所有共享物品。</text>
@@ -23,7 +23,7 @@
       </view>
       <view class="concept-divider"></view>
       <view class="concept-row">
-        <view class="concept-icon">📌</view>
+        <view class="concept-icon icon icon-pin-green"></view>
         <view class="concept-body">
           <text class="concept-title">绑定 = 当前身份</text>
           <text class="concept-desc">绑定决定你当前看到的数据和收到的推送通知。</text>
@@ -32,7 +32,7 @@
       </view>
     </view>
     <view class="tip-box">
-      <text class="tip-icon">💡</text>
+      <view class="tip-icon icon icon-bulb-gold"></view>
       <text class="tip-text">类比：你可以加入多个公司群，但只能以一家公司员工身份使用工卡。</text>
     </view>
   </view>
@@ -80,7 +80,7 @@
       </view>
     </view>
     <view class="tip-box">
-      <text class="tip-icon">💡</text>
+      <view class="tip-icon icon icon-bulb-gold"></view>
       <text class="tip-text">退出后再加入同一队伍，可能看到重复物品，手动删除即可。</text>
     </view>
   </view>
@@ -106,7 +106,7 @@
       </view>
     </view>
     <view class="tip-box">
-      <text class="tip-icon">💡</text>
+      <view class="tip-icon icon icon-bulb-gold"></view>
       <text class="tip-text">切换绑定后，推送内容也会跟着变化，始终与你当前的绑定一致。</text>
     </view>
   </view>
