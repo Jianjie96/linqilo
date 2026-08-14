@@ -73,7 +73,7 @@ async function createTeam(openid, name) {
 
   // 更新用户表：加入队伍并绑定
   await upsertUser(openid, {
-    teamIds: _.addToSet(teamId),
+    addTeamId: teamId,
     boundGroupId: teamId,
     updatedAt: new Date().toISOString()
   })
@@ -121,7 +121,7 @@ async function joinTeam(openid, inviteCode) {
 
   // 更新用户表：加入队伍（不自动绑定，保持原有绑定不变）
   await upsertUser(openid, {
-    teamIds: _.addToSet(team.teamId),
+    addTeamId: team.teamId,
     updatedAt: new Date().toISOString()
   })
 
@@ -178,7 +178,7 @@ async function leaveTeam(openid, teamId) {
 
   if (userRes.data.length > 0) {
     const user = userRes.data[0]
-    const newTeamIds = (user.teamIds || []).filter(id => id !== teamId)
+    const newTeamIds = (Array.isArray(user.teamIds) ? user.teamIds : []).filter(id => id !== teamId)
     const newBound = user.boundGroupId === teamId ? null : user.boundGroupId
 
     await db.collection(COLLECTIONS.USERS).doc(user._id).update({
@@ -246,8 +246,20 @@ async function getMyTeams(openid) {
     .get()
 
   const user = userRes.data.length > 0 ? userRes.data[0] : null
-  const teamIds = user?.teamIds || []
+  const rawTeamIds = user?.teamIds
+  let teamIds = Array.isArray(rawTeamIds) ? rawTeamIds : []
   const boundGroupId = user?.boundGroupId || null
+
+  // 历史数据被污染（teamIds 为非数组）：从成员表重建并回写修复
+  if (user && rawTeamIds !== undefined && !Array.isArray(rawTeamIds)) {
+    const memberRes = await db.collection(COLLECTIONS.MEMBERS)
+      .where({ openid })
+      .get()
+    teamIds = memberRes.data.map(m => m.teamId)
+    await db.collection(COLLECTIONS.USERS)
+      .doc(user._id)
+      .update({ data: { teamIds, updatedAt: new Date().toISOString() } })
+  }
 
   if (teamIds.length === 0) {
     return {
@@ -359,20 +371,33 @@ async function refreshInviteCode(openid, teamId) {
 
 /**
  * 更新或创建用户记录（upsert 语义）
+ * updates.addTeamId：可选，表示「把该队伍 ID 追加进 teamIds」（自动去重）。
+ * 注意：不能直接用 _.addToSet 命令，创建新记录时命令对象会被原样写入，
+ * 导致 teamIds 字段变成 object 类型，后续 $addToSet 更新会报错
  */
 async function upsertUser(openid, updates) {
+  const { addTeamId, ...rest } = updates
   const existing = await db.collection(COLLECTIONS.USERS)
     .where({ openid })
     .get()
 
   if (existing.data.length > 0) {
+    const user = existing.data[0]
+    const data = { ...rest }
+
+    if (addTeamId) {
+      // 历史数据若被污染为非数组（对象），按空数组重建
+      const cur = Array.isArray(user.teamIds) ? user.teamIds : []
+      data.teamIds = cur.includes(addTeamId) ? cur : cur.concat(addTeamId)
+    }
+
     await db.collection(COLLECTIONS.USERS)
-      .doc(existing.data[0]._id)
-      .update({ data: updates })
+      .doc(user._id)
+      .update({ data })
   } else {
     // 首次使用：初始化用户记录
-    const initData = { openid, ...updates }
-    if (!initData.teamIds) initData.teamIds = []
+    const initData = { openid, ...rest }
+    initData.teamIds = addTeamId ? [addTeamId] : []
     if (initData.boundGroupId === undefined) initData.boundGroupId = null
     await db.collection(COLLECTIONS.USERS).add({ data: initData })
   }
