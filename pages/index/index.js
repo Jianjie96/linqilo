@@ -44,14 +44,32 @@ Page({
     totalSaved: 0,
     estimatedSaved: 0,
     earnedBadges: 0,
+    // 自定义页头
+    statusBarHeight: 20,
+    headerHeight: 88,
     // 组队绑定视角
     boundTeamName: '个人',
     boundGroupId: null,
+    showSwitcher: false,
+    switcherOptions: [],
     _animateCards: false,
     loading: true
   },
 
   _dataLoaded: false, // 是否已加载过数据
+
+  onLoad() {
+    // 获取系统信息，计算自定义页头高度
+    try {
+      const sysInfo = wx.getSystemInfoSync()
+      const statusBarHeight = sysInfo.statusBarHeight || 20
+      // 页头高度 = 状态栏 + 导航栏（44px）
+      const headerHeight = statusBarHeight + 44
+      this.setData({ statusBarHeight, headerHeight })
+    } catch (e) {
+      this.setData({ statusBarHeight: 20, headerHeight: 64 })
+    }
+  },
 
   onShow() {
     // 更新绑定状态
@@ -69,13 +87,58 @@ Page({
     this.loadAchievementBanner()
   },
 
-  // 更新绑定状态显示
+  // 更新绑定状态显示 + 构建切换选项
   _updateBindingDisplay() {
-    const { boundGroupId, boundTeamName } = app.globalData
+    const { boundGroupId, boundTeamName, teams } = app.globalData
     this.setData({
       boundGroupId,
-      boundTeamName: boundTeamName || '个人'
+      boundTeamName: boundTeamName || '个人',
+      // 构建切换选项：个人 + 已加入的队伍
+      switcherOptions: [
+        { teamId: null, name: '个人', icon: '👤', isActive: !boundGroupId },
+        ...(teams || []).map(t => ({
+          teamId: t.teamId,
+          name: t.name,
+          icon: '👥',
+          isActive: t.teamId === boundGroupId
+        }))
+      ]
     })
+  },
+
+  // 切换视角下拉菜单开关
+  toggleSwitcher() {
+    this.setData({ showSwitcher: !this.data.showSwitcher })
+  },
+
+  // 关闭下拉菜单
+  closeSwitcher() {
+    this.setData({ showSwitcher: false })
+  },
+
+  // 选择切换目标
+  async onSelectSwitcher(e) {
+    const teamId = e.currentTarget.dataset.teamId || null
+    this.setData({ showSwitcher: false })
+
+    // 已经是当前绑定，不操作
+    if (teamId === this.data.boundGroupId) return
+
+    wx.showLoading({ title: '切换中...' })
+    try {
+      await app.switchBinding(teamId)
+      wx.hideLoading()
+      this._updateBindingDisplay()
+      this.refreshItems()
+      this.loadAchievementBanner()
+      wx.showToast({
+        title: teamId ? `已切换到队伍` : '已切换到个人',
+        icon: 'success'
+      })
+    } catch (err) {
+      wx.hideLoading()
+      wx.showToast({ title: err.message || '切换失败', icon: 'none' })
+    }
   },
 
   // 从云端拉取第一页并渲染
@@ -325,6 +388,7 @@ Page({
 
   // 跳转队伍管理
   goTeam() {
+    this.setData({ showSwitcher: false })
     wx.navigateTo({ url: '/pages/team/team' })
   },
 

@@ -1,11 +1,41 @@
 <view class="page-index">
-  <!-- 绑定视角标签 -->
-  <view class="binding-tag-bar" bindtap="goTeam">
-    <view class="binding-tag {{boundGroupId ? 'binding-tag-team' : 'binding-tag-personal'}}">
-      <text class="binding-tag-icon">{{boundGroupId ? '👥' : '👤'}}</text>
-      <text class="binding-tag-text">{{boundTeamName}}</text>
+  <!-- 自定义页头 -->
+  <view class="custom-header" style="padding-top: {{statusBarHeight}}px;">
+    <view class="header-content" style="height: 44px;">
+      <!-- 左侧：视角切换 -->
+      <view class="header-left" bindtap="toggleSwitcher">
+        <text class="header-switch-icon">{{boundGroupId ? '👥' : '👤'}}</text>
+        <text class="header-switch-name">{{boundTeamName}}</text>
+        <text class="header-switch-arrow {{showSwitcher ? 'arrow-up' : ''}}">▾</text>
+      </view>
     </view>
-    <text class="binding-tag-hint" wx:if="{{boundGroupId}}">点击管理 ›</text>
+  </view>
+
+  <!-- 页头占位符 -->
+  <view style="height: {{headerHeight}}px;"></view>
+
+  <!-- 视角切换下拉菜单 -->
+  <view class="switcher-overlay" wx:if="{{showSwitcher}}" bindtap="closeSwitcher">
+    <view class="switcher-dropdown" style="top: {{headerHeight - 8}}px;" catchtap="">
+      <view
+        class="switcher-item {{item.isActive ? 'switcher-item-active' : ''}}"
+        wx:for="{{switcherOptions}}"
+        wx:key="teamId"
+        data-team-id="{{item.teamId}}"
+        bindtap="onSelectSwitcher"
+      >
+        <view class="switcher-item-left">
+          <text class="switcher-item-icon">{{item.icon}}</text>
+          <text class="switcher-item-name">{{item.name}}</text>
+        </view>
+        <text class="switcher-item-check" wx:if="{{item.isActive}}">✓</text>
+      </view>
+      <view class="switcher-divider"></view>
+      <view class="switcher-item switcher-manage" bindtap="goTeam">
+        <text class="switcher-item-icon">📋</text>
+        <text class="switcher-item-name">队伍管理</text>
+      </view>
+    </view>
   </view>
 
   <!-- 顶部统计 -->

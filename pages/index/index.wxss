@@ -13,45 +13,134 @@ page {
   padding: 0 30rpx;
 }
 
-/* ===== 绑定视角标签 ===== */
-.binding-tag-bar {
+/* ===== 自定义页头 ===== */
+.custom-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 99;
+  background: #07C160;
+}
+
+.header-content {
+  display: flex;
+  align-items: center;
+  padding: 0 30rpx;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  padding: 8rpx 20rpx 8rpx 12rpx;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 28rpx;
+}
+
+.header-switch-icon {
+  font-size: 28rpx;
+}
+
+.header-switch-name {
+  font-size: 26rpx;
+  color: #fff;
+  font-weight: 500;
+  max-width: 180rpx;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.header-switch-arrow {
+  font-size: 22rpx;
+  color: rgba(255, 255, 255, 0.8);
+  transition: transform 0.2s;
+}
+
+.header-switch-arrow.arrow-up {
+  transform: rotate(180deg);
+}
+
+/* ===== 视角切换下拉 ===== */
+.switcher-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 98;
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.switcher-dropdown {
+  position: fixed;
+  left: 24rpx;
+  right: auto;
+  width: 360rpx;
+  background: #fff;
+  border-radius: 20rpx;
+  box-shadow: 0 8rpx 32rpx rgba(0, 0, 0, 0.12);
+  overflow: hidden;
+  animation: dropdownIn 0.2s ease-out;
+}
+
+@keyframes dropdownIn {
+  from { opacity: 0; transform: translateY(-12rpx); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.switcher-item {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16rpx 30rpx 0;
+  padding: 28rpx 28rpx;
 }
 
-.binding-tag {
-  display: inline-flex;
+.switcher-item:active {
+  background: #F5F5F5;
+}
+
+.switcher-item-left {
+  display: flex;
   align-items: center;
-  gap: 8rpx;
-  padding: 8rpx 20rpx;
-  border-radius: 24rpx;
-  font-size: 24rpx;
+  gap: 16rpx;
+  flex: 1;
+}
+
+.switcher-item-icon {
+  font-size: 32rpx;
+}
+
+.switcher-item-name {
+  font-size: 28rpx;
+  color: #333;
   font-weight: 500;
+  max-width: 240rpx;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.binding-tag-personal {
-  background: #F0F0F0;
-  color: #666;
-}
-
-.binding-tag-team {
-  background: rgba(7, 193, 96, 0.1);
+.switcher-item-active .switcher-item-name {
   color: #07C160;
 }
 
-.binding-tag-icon {
-  font-size: 24rpx;
+.switcher-item-check {
+  font-size: 28rpx;
+  color: #07C160;
+  font-weight: 700;
 }
 
-.binding-tag-text {
-  font-size: 24rpx;
+.switcher-divider {
+  height: 1rpx;
+  background: #F0F0F0;
+  margin: 0 28rpx;
 }
 
-.binding-tag-hint {
-  font-size: 22rpx;
-  color: #999;
+.switcher-manage .switcher-item-name {
+  color: #666;
+  font-weight: 400;
 }
 
 /* ===== 加载骨架屏 ===== */
