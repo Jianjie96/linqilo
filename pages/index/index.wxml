@@ -32,7 +32,7 @@
       </view>
       <view class="switcher-divider"></view>
       <view class="switcher-item switcher-manage" bindtap="goTeam">
-        <view class="switcher-item-icon icon icon-clipboard-green"></view>
+        <view class="switcher-item-icon icon icon-clipboard-dark"></view>
         <text class="switcher-item-name">队伍管理</text>
       </view>
     </view>
