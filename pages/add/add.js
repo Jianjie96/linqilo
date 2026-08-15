@@ -161,6 +161,16 @@ Page({
       success: (res) => {
         const tempFilePath = res.tempFiles[0].tempFilePath
         this.handlePhoto(tempFilePath)
+      },
+      fail: (err) => {
+        console.error('拍照失败:', err)
+        // 隐私协议拒绝或取消拍摄时不打扰用户
+        if (err.errMsg && err.errMsg.includes('cancel')) return
+        if (err.errMsg && err.errMsg.includes('privacy')) {
+          wx.showToast({ title: '需同意隐私保护指引后使用', icon: 'none' })
+          return
+        }
+        wx.showToast({ title: '拍照失败，请重试', icon: 'none' })
       }
     })
   },
@@ -175,6 +185,15 @@ Page({
       success: (res) => {
         const tempFilePath = res.tempFiles[0].tempFilePath
         this.handlePhoto(tempFilePath)
+      },
+      fail: (err) => {
+        console.error('选择图片失败:', err)
+        if (err.errMsg && err.errMsg.includes('cancel')) return
+        if (err.errMsg && err.errMsg.includes('privacy')) {
+          wx.showToast({ title: '需同意隐私保护指引后使用', icon: 'none' })
+          return
+        }
+        wx.showToast({ title: '选择图片失败，请重试', icon: 'none' })
       }
     })
   },

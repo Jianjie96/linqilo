@@ -32,7 +32,8 @@
     "useCompilerPlugins": false,
     "condition": false,
     "swc": false,
-    "disableSWC": true
+    "disableSWC": true,
+    "__usePrivacyCheck__": true
   },
   "appid": "wx742667049b5e316a",
   "projectname": "daoqile",
