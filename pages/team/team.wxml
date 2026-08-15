@@ -1,13 +1,16 @@
 <view class="container">
-  <!-- 当前绑定状态（决定消息推送范围） -->
-  <view class="section-title">当前绑定（决定推送）</view>
+  <!-- 推送订阅（默认订阅个人与全部队伍，可单独静音） -->
+  <view class="section-title">推送订阅</view>
   <view class="card binding-card">
     <view class="binding-status">
-      <view class="binding-icon icon {{boundGroupId ? 'icon-users-dark' : 'icon-user-dark'}}"></view>
-      <text class="binding-name">{{boundTeamName}}</text>
+      <view class="binding-icon icon {{personalMuted ? 'icon-bell-off-gray' : 'icon-bell-green'}}"></view>
+      <view class="binding-text">
+        <text class="binding-name">{{personalMuted ? '个人空间已静音' : '个人空间推送中'}}</text>
+        <text class="binding-hint">推送汇总所有未静音的订阅目标</text>
+      </view>
     </view>
-    <view class="binding-switch" wx:if="{{boundGroupId}}" bindtap="switchBinding" data-team-id="">
-      <text>绑定到个人</text>
+    <view class="mute-switch {{personalMuted ? 'is-muted' : ''}}" bindtap="toggleMute" data-target="personal">
+      <view class="mute-knob"></view>
     </view>
   </view>
 
@@ -32,24 +35,10 @@
   <!-- 我的队伍列表 -->
   <view class="section-title">我的队伍</view>
   <view class="card">
-    <!-- 个人视角选项 -->
-    <view class="team-item {{!boundGroupId ? 'team-item-bound' : ''}}" bindtap="switchBinding" data-team-id="">
-      <view class="team-item-left">
-        <view class="team-item-icon icon icon-user-dark"></view>
-        <view class="team-item-info">
-          <text class="team-item-name">个人空间</text>
-          <text class="team-item-hint">仅自己可见</text>
-        </view>
-      </view>
-      <view class="team-item-right">
-        <text class="bound-tag" wx:if="{{!boundGroupId}}">当前</text>
-      </view>
-    </view>
-
     <!-- 队伍列表 -->
     <block wx:if="{{hasTeams}}">
       <block wx:for="{{teams}}" wx:key="teamId">
-        <view class="team-item {{item.isBound ? 'team-item-bound' : ''}}">
+        <view class="team-item">
           <view class="team-item-left" bindtap="showTeamDetail" data-team-id="{{item.teamId}}">
             <view class="team-item-icon icon icon-users-dark"></view>
             <view class="team-item-info">
@@ -58,8 +47,9 @@
             </view>
           </view>
           <view class="team-item-right">
-            <text class="bound-tag" wx:if="{{item.isBound}}">当前</text>
-            <text class="bind-btn" wx:if="{{!item.isBound}}" catchtap="switchBinding" data-team-id="{{item.teamId}}">绑定</text>
+            <view class="mute-switch {{item.isMuted ? 'is-muted' : ''}}" catchtap="toggleMute" data-target="{{item.teamId}}">
+              <view class="mute-knob"></view>
+            </view>
             <text class="detail-btn" catchtap="showTeamDetail" data-team-id="{{item.teamId}}">详情 ›</text>
           </view>
         </view>
@@ -104,6 +94,16 @@
 
       <!-- 操作按钮 -->
       <view class="detail-actions">
+        <view class="detail-action-row" wx:if="{{detailTeam.isCreator}}">
+          <button class="btn-secondary" bindtap="renameTeam">
+            <view class="icon icon-pencil-green btn-edit-icon"></view>
+            <text>修改名称</text>
+          </button>
+          <button class="btn-dissolve" bindtap="dissolveTeam">
+            <view class="icon icon-trash-red btn-edit-icon"></view>
+            <text>解散队伍</text>
+          </button>
+        </view>
         <button class="btn-leave" bindtap="leaveTeam">彻底退出</button>
       </view>
     </view>

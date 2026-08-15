@@ -3,114 +3,93 @@
   <view class="hero">
     <view class="hero-icon icon icon-book-green"></view>
     <text class="hero-title">叮咚到期 · 使用帮助</text>
-    <text class="hero-sub">了解组队共享的核心概念，轻松管理你的物品</text>
+    <text class="hero-sub">了解组队与视角的核心概念，轻松管理你的物品</text>
   </view>
 
-  <!-- 核心概念：加入 / 视角 / 绑定 -->
+  <!-- 组队 -->
   <view class="section">
     <view class="section-head">
       <text class="section-num">1</text>
-      <text class="section-title">加入 / 视角 / 绑定</text>
+      <text class="section-title">组队</text>
     </view>
     <view class="card">
+      <view class="concept-row">
+        <view class="concept-icon icon icon-pencil-green"></view>
+        <view class="concept-body">
+          <text class="concept-title">创建者 = 管理员</text>
+          <text class="concept-desc">创建者可以随时修改队伍名称，也可以主动解散队伍（解散后队内数据全部删除）。</text>
+        </view>
+      </view>
+      <view class="concept-divider"></view>
       <view class="concept-row">
         <view class="concept-icon icon icon-handshake-green"></view>
         <view class="concept-body">
           <text class="concept-title">加入 = 成员资格</text>
-          <text class="concept-desc">加入一个队伍后，你可以查看和操作队伍中的所有共享物品。</text>
-          <text class="concept-desc">你可以同时加入多个队伍。</text>
+          <text class="concept-desc">输入邀请码即可加入队伍，查看和操作队伍中的共享数据，也可以同时加入多个队伍。</text>
         </view>
       </view>
-      <view class="concept-divider"></view>
-      <view class="concept-row">
-        <view class="concept-icon icon icon-eye-green"></view>
-        <view class="concept-body">
-          <text class="concept-title">视角 = 当前看哪个空间</text>
-          <text class="concept-desc">首页顶部下拉可以随时切换视角，切换很快，不影响推送。</text>
-        </view>
+      <view class="rule-item">
+        <text class="rule-dot"></text>
+        <text class="rule-text">当队伍里最后一个人退出时，队伍自动解散</text>
       </view>
-      <view class="concept-divider"></view>
-      <view class="concept-row">
-        <view class="concept-icon icon icon-pin-green"></view>
-        <view class="concept-body">
-          <text class="concept-title">绑定 = 推送目标</text>
-          <text class="concept-desc">绑定决定你收到的推送通知范围，同一时间只能绑定一个目标（个人或某支队伍）。</text>
-          <text class="concept-desc">在「队伍管理」页手动更换绑定，低频操作，更换时会强提醒。</text>
-        </view>
-      </view>
-    </view>
-    <view class="tip-box">
-      <view class="tip-icon icon icon-bulb-gold"></view>
-      <text class="tip-text">类比：你可以加入多个公司群，随时浏览任意群（视角），但只能指定一个群接收消息推送（绑定）。</text>
     </view>
   </view>
 
-  <!-- 数据归属 -->
+  <!-- 切换视角 -->
   <view class="section">
     <view class="section-head">
       <text class="section-num">2</text>
-      <text class="section-title">数据归属</text>
+      <text class="section-title">切换视角</text>
     </view>
     <view class="card">
-      <view class="rule-item">
-        <text class="rule-dot"></text>
-        <text class="rule-text">谁创建的物品，归谁所有</text>
+      <view class="concept-row">
+        <view class="concept-icon icon icon-eye-green"></view>
+        <view class="concept-body">
+          <text class="concept-title">数据带视角维度</text>
+          <text class="concept-desc">所有操作数据都带上视角：个人视角的数据归个人，队伍视角的数据归队伍。</text>
+          <text class="concept-desc">首页顶部下拉可以随时切换视角，切换很快。</text>
+        </view>
       </view>
       <view class="rule-item">
         <text class="rule-dot"></text>
-        <text class="rule-text">队伍中所有人都可以查看和编辑共享物品</text>
+        <text class="rule-text">个人视角下添加的物品归个人；队伍视角下添加的物品归队伍，队内成员共享</text>
       </view>
       <view class="rule-item">
         <text class="rule-dot"></text>
-        <text class="rule-text">当前视角为个人时，添加的物品归个人；视角为队伍时，添加的物品归队伍</text>
-      </view>
-    </view>
-  </view>
-
-  <!-- 退出规则 -->
-  <view class="section">
-    <view class="section-head">
-      <text class="section-num">3</text>
-      <text class="section-title">退出队伍</text>
-    </view>
-    <view class="card">
-      <view class="rule-item">
-        <text class="rule-dot"></text>
-        <text class="rule-text">退出时，你创建的物品会复制一份留在队伍，队友可以继续编辑</text>
-      </view>
-      <view class="rule-item">
-        <text class="rule-dot"></text>
-        <text class="rule-text">原件回到你的个人空间，不会丢失</text>
-      </view>
-      <view class="rule-item">
-        <text class="rule-dot"></text>
-        <text class="rule-text">彻底退出时，你在该队伍的成就贡献会被剥离</text>
-      </view>
-      <view class="rule-item">
-        <text class="rule-dot"></text>
-        <text class="rule-text">如果该队伍是你的绑定目标，绑定会重置为个人，推送随之变化</text>
-      </view>
-      <view class="rule-item">
-        <text class="rule-dot"></text>
-        <text class="rule-text">如果最后一个成员退出，队伍自动解散，副本将被清理</text>
+        <text class="rule-text">切换视角不影响消息推送订阅</text>
       </view>
     </view>
     <view class="tip-box">
       <view class="tip-icon icon icon-bulb-gold"></view>
-      <text class="tip-text">退出后再加入同一队伍，可能看到重复物品，手动删除即可。</text>
+      <text class="tip-text">类比：视角是你「此刻在哪个空间操作」，切换轻快，不影响任何订阅关系。</text>
     </view>
   </view>
 
-  <!-- 推送通知 -->
+  <!-- 消息推送 -->
   <view class="section">
     <view class="section-head">
-      <text class="section-num">4</text>
-      <text class="section-title">推送通知</text>
+      <text class="section-num">3</text>
+      <text class="section-title">消息推送</text>
     </view>
     <view class="card">
+      <view class="concept-row">
+        <view class="concept-icon icon icon-bell-green"></view>
+        <view class="concept-body">
+          <text class="concept-title">默认订阅</text>
+          <text class="concept-desc">创建或加入某个队伍后，默认订阅该队伍的消息推送，无需额外操作。</text>
+        </view>
+      </view>
+      <view class="concept-divider"></view>
+      <view class="concept-row">
+        <view class="concept-icon icon icon-bell-off-gray"></view>
+        <view class="concept-body">
+          <text class="concept-title">可手动静音（mute）</text>
+          <text class="concept-desc">在「队伍管理」页可以为个人或任一队伍单独静音，静音后不再收到该目标的提醒，随时可以重新开启。</text>
+        </view>
+      </view>
       <view class="rule-item">
         <text class="rule-dot"></text>
-        <text class="rule-text">通知只推送你绑定的目标：绑定个人收个人提醒，绑定队伍收队伍提醒</text>
+        <text class="rule-text">推送消息汇总你所有已订阅（个人和队伍）的数据情况，一条消息看全</text>
       </view>
       <view class="rule-item">
         <text class="rule-dot"></text>
@@ -123,14 +102,62 @@
     </view>
     <view class="tip-box">
       <view class="tip-icon icon icon-bulb-gold"></view>
-      <text class="tip-text">切换视角不影响推送；只有更换绑定才会改变推送范围，所以绑定操作会强提醒。</text>
+      <text class="tip-text">个人数据与每支队伍分别是一个订阅目标，各自独立控制。</text>
+    </view>
+  </view>
+
+  <!-- 退出队伍 -->
+  <view class="section">
+    <view class="section-head">
+      <text class="section-num">4</text>
+      <text class="section-title">退出队伍</text>
+    </view>
+    <view class="card">
+      <view class="rule-item">
+        <text class="rule-dot"></text>
+        <text class="rule-text">退出不影响队伍内的数据：在队伍内创建的数据资产归属队伍，退出后留在队伍，队友可继续使用</text>
+      </view>
+      <view class="rule-item">
+        <text class="rule-dot"></text>
+        <text class="rule-text">退出后你对该队伍的操作权限将被移除，该队伍的推送订阅也会随之移除</text>
+      </view>
+      <view class="rule-item">
+        <text class="rule-dot"></text>
+        <text class="rule-text">若队伍只剩你一人，退出后队伍自动解散，队内数据全部删除</text>
+      </view>
+    </view>
+    <view class="tip-box">
+      <view class="tip-icon icon icon-bulb-gold"></view>
+      <text class="tip-text">想保留个人数据？在个人视角下添加即可；在队伍内添加的就是队伍的资产。</text>
+    </view>
+  </view>
+
+  <!-- 排行榜 -->
+  <view class="section">
+    <view class="section-head">
+      <text class="section-num">5</text>
+      <text class="section-title">排行榜</text>
+    </view>
+    <view class="card">
+      <view class="rule-item">
+        <text class="rule-dot"></text>
+        <text class="rule-text">排行榜跟着视角走：个人视角看个人排行，队伍视角看队伍排行</text>
+      </view>
+      <view class="rule-item">
+        <text class="rule-dot"></text>
+        <text class="rule-text">等级、价值等数据也跟随视角计算</text>
+      </view>
+      <view class="rule-item">
+        <text class="rule-dot"></text>
+        <text class="rule-text">「超过全网 xx%」统计所有个人和队伍的数据情况后同台排名</text>
+      </view>
     </view>
   </view>
 
   <!-- 邀请队友 -->
   <view class="section">
     <view class="section-head">
-      <text class="section-num">5</text>
+      <text class="section-num">6</text>
       <text class="section-title">邀请队友</text>
     </view>
     <view class="card">

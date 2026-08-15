@@ -10,12 +10,13 @@
     <view class="hero">
       <view class="hero-glow"></view>
       <view class="hero-body">
-        <!-- 个人视角：等级标签；队伍视角：队伍名称标签 -->
+        <!-- 等级标签（个人视角：个人等级；队伍视角：队伍等级 + 队名） -->
         <view class="level-tag" wx:if="{{!isTeamView}}">
           <text class="level-mark">Lv.{{levelInfo.mark}}</text>
           <text class="level-name">{{levelInfo.name}}</text>
         </view>
         <view class="level-tag team-tag" wx:else>
+          <text class="level-mark">Lv.{{levelInfo.mark}}</text>
           <text class="level-name">{{teamName}}</text>
         </view>
 
@@ -24,15 +25,20 @@
           <text class="figure-label">件物品已避免过期</text>
         </view>
 
-        <view class="percentile" wx:if="{{stats.totalUsers > 0}}">
+        <view class="hero-value" wx:if="{{stats.totalSavedValue > 0}}">
+          <text class="hv-label">已省下</text>
+          <text class="hv-num">¥{{stats.totalSavedValue}}</text>
+        </view>
+
+        <view class="percentile" wx:if="{{stats.totalSubjects > 0}}">
           <view class="percentile-head">
             <text class="percentile-num">{{stats.percentile}}%</text>
-            <text class="percentile-desc">超过的{{isTeamView ? '团队' : '用户'}}</text>
+            <text class="percentile-desc">超过全网{{isTeamView ? '团队' : '用户'}}</text>
           </view>
           <view class="percentile-track">
             <view class="percentile-fill" style="width: {{stats.percentile}}%"></view>
           </view>
-          <text class="rank" wx:if="{{stats.totalSaved > 0}}">#{{stats.rank}} / {{stats.totalUsers}}</text>
+          <text class="rank" wx:if="{{stats.totalSaved > 0}}">#{{stats.rank}} / {{stats.totalSubjects}}</text>
         </view>
       </view>
 
@@ -55,25 +61,24 @@
       </view>
     </view>
 
-    <!-- 个人视角：等级进度 + 徽章 -->
-    <block wx:if="{{!isTeamView}}">
-      <!-- 等级进度 -->
-      <view class="section">
-        <view class="sec-head">
-          <text class="sec-title">等级进度</text>
-          <text class="sec-sub">{{levelInfo.name}}</text>
-        </view>
-        <view class="lv-track">
-          <view class="lv-fill" style="width: {{levelProgress}}%"></view>
-        </view>
-        <view class="lv-foot">
-          <text>{{stats.totalSaved}} / {{levelInfo.nextThreshold}}</text>
-          <text wx:if="{{!levelInfo.isMax}}">还需 {{levelInfo.remaining}} 件升至 {{levelInfo.nextName}}</text>
-          <text wx:else>已达最高等级</text>
-        </view>
+    <!-- 等级进度（跟随视角：个人等级 / 队伍等级） -->
+    <view class="section">
+      <view class="sec-head">
+        <text class="sec-title">等级进度</text>
+        <text class="sec-sub">{{levelInfo.name}}</text>
       </view>
+      <view class="lv-track">
+        <view class="lv-fill" style="width: {{levelProgress}}%"></view>
+      </view>
+      <view class="lv-foot">
+        <text>{{stats.totalSaved}} / {{levelInfo.nextThreshold}}</text>
+        <text wx:if="{{!levelInfo.isMax}}">还需 {{levelInfo.remaining}} 件升至 {{levelInfo.nextName}}</text>
+        <text wx:else>已达最高等级</text>
+      </view>
+    </view>
 
-      <!-- 徽章 -->
+    <!-- 个人视角：成就徽章 -->
+    <block wx:if="{{!isTeamView}}">
       <view class="section">
         <view class="sec-head">
           <text class="sec-title">成就徽章</text>

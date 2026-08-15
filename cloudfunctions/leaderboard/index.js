@@ -4,17 +4,18 @@
 // 成就统计（跟随视角，队内操作双写）：
 // - 个人空间操作（teamId 为空/'personal'）：计入操作者个人聚合 user_stats
 // - 队伍操作（teamId = 队伍 id）：同时计入队伍聚合 team_stats 与操作者个人聚合 user_stats，
-//   保证个人排行的信息完整——「超过 xx% 用户」拿所有人的信息排名，
+//   保证个人排行的信息完整——「超过全网 xx%」拿所有人的信息排名，
 //   不管贡献发生在个人空间还是队伍内
 //
 // stat_events 集合（贡献明细账本）：
 // { _openid, teamId, itemId, type, value, createdAt }
 // 同一 (teamId, itemId, type) 只记一次，防止多人重复操作同一物品虚增统计；
-// 退出队伍时按 (openid, teamId) 删除事件并扣减队伍聚合（剥离贡献，个人聚合保留）
+// 数据归属队伍：退出不剥离贡献，队伍解散时账本与聚合随队清理
 //
 // 排行榜跟随视角（getStats）：
-// - 个人视角：个人统计 + 全网个人百分位 + 全体个人排行列表
-// - 队伍视角：队伍统计 + 全网队伍百分位 + 队内成员贡献排行列表
+// - 个人视角：个人统计 + 全体个人排行列表；等级/价值跟随个人聚合
+// - 队伍视角：队伍统计 + 队内成员贡献排行列表；等级/价值跟随队伍聚合
+// - 「超过全网 xx%」：混合池口径——统计所有个人（user_stats）与所有队伍（team_stats）再排名
 //
 // user_stats 集合结构：
 // { _openid, totalTracked, totalSaved, totalSavedValue, totalExpired, updatedAt }
@@ -203,19 +204,12 @@ async function getStats(openid, teamId) {
   return getTeamStats(t, openid)
 }
 
-// 个人视角：个人统计 + 全网个人百分位/排名 + 全体个人排行
+// 个人视角：个人统计 + 混合池百分位/排名 + 全体个人排行
 async function getPersonalStats(openid) {
   const stats = await getOrCreatePersonalStats(openid)
 
-  // 百分位与排名：全体个人用户的完整统计（含队伍贡献，因队内操作双写）
-  const totalRes = await db.collection(COLLECTIONS.USER_STATS).count()
-  const totalUsers = totalRes.total
-  const belowRes = await db.collection(COLLECTIONS.USER_STATS)
-    .where({ totalSavedValue: _.lt(stats.totalSavedValue || 0) })
-    .count()
-  const usersBelow = belowRes.total
-  const percentile = totalUsers > 0 ? Math.round((usersBelow / totalUsers) * 100) : 0
-  const rank = usersBelow + 1
+  // 百分位与排名：混合池（所有个人 + 所有队伍），「超过全网 xx%」统一口径
+  const mixed = await computeMixedPercentile(stats.totalSavedValue || 0)
 
   // 全体个人排行列表
   const rankingRes = await db.collection(COLLECTIONS.USER_STATS)
@@ -241,27 +235,20 @@ async function getPersonalStats(openid) {
       totalSaved: stats.totalSaved || 0,
       totalSavedValue: stats.totalSavedValue || 0,
       totalExpired: stats.totalExpired || 0,
-      percentile,
-      rank,
-      totalUsers,
+      percentile: mixed.percentile,
+      rank: mixed.rank,
+      totalSubjects: mixed.totalSubjects,
       ranking
     }
   }
 }
 
-// 队伍视角：队伍统计 + 全网队伍百分位/排名 + 队内成员贡献排行
+// 队伍视角：队伍统计 + 混合池百分位/排名 + 队内成员贡献排行
 async function getTeamStats(teamId, openid) {
   const stats = await getOrCreateTeamStats(teamId)
 
-  // 百分位与排名：全体队伍
-  const totalRes = await db.collection(COLLECTIONS.TEAM_STATS).count()
-  const totalTeams = totalRes.total
-  const belowRes = await db.collection(COLLECTIONS.TEAM_STATS)
-    .where({ totalSavedValue: _.lt(stats.totalSavedValue || 0) })
-    .count()
-  const teamsBelow = belowRes.total
-  const percentile = totalTeams > 0 ? Math.round((teamsBelow / totalTeams) * 100) : 0
-  const rank = teamsBelow + 1
+  // 百分位与排名：混合池（所有个人 + 所有队伍），队伍与个人同台竞技
+  const mixed = await computeMixedPercentile(stats.totalSavedValue || 0)
 
   // 队内成员贡献排行：账本按成员聚合
   const ranking = await getTeamMemberRanking(teamId, openid)
@@ -275,12 +262,28 @@ async function getTeamStats(teamId, openid) {
       totalSaved: stats.totalSaved || 0,
       totalSavedValue: stats.totalSavedValue || 0,
       totalExpired: stats.totalExpired || 0,
-      percentile,
-      rank,
-      totalUsers: totalTeams,
+      percentile: mixed.percentile,
+      rank: mixed.rank,
+      totalSubjects: mixed.totalSubjects,
       ranking
     }
   }
+}
+
+// 混合池百分位/排名：「超过全网 xx%」统计所有个人和队伍的数据情况再排名
+async function computeMixedPercentile(value) {
+  const [userTotal, teamTotal, userBelow, teamBelow] = await Promise.all([
+    db.collection(COLLECTIONS.USER_STATS).count(),
+    db.collection(COLLECTIONS.TEAM_STATS).count(),
+    db.collection(COLLECTIONS.USER_STATS).where({ totalSavedValue: _.lt(value) }).count(),
+    db.collection(COLLECTIONS.TEAM_STATS).where({ totalSavedValue: _.lt(value) }).count()
+  ])
+
+  const totalSubjects = userTotal.total + teamTotal.total
+  const below = userBelow.total + teamBelow.total
+  const percentile = totalSubjects > 0 ? Math.round((below / totalSubjects) * 100) : 0
+
+  return { percentile, rank: below + 1, totalSubjects }
 }
 
 // 队内成员贡献排行：聚合账本（$group）；聚合失败时降级为内存聚合

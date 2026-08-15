@@ -1,5 +1,5 @@
 // 组队管理云函数
-// action: create | join | leave | bind | updateView | getMy | getMembers | refreshCode
+// action: create | join | leave | rename | dissolve | mute | updateView | getMy | getMembers | refreshCode
 
 const cloud = require('wx-server-sdk')
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
@@ -27,8 +27,12 @@ exports.main = async (event, context) => {
         return await joinTeam(openid, event.inviteCode)
       case 'leave':
         return await leaveTeam(openid, event.teamId)
-      case 'bind':
-        return await bindTeam(openid, event.teamId) // teamId 为 null 表示绑定个人
+      case 'rename':
+        return await renameTeam(openid, event.teamId, event.name)
+      case 'dissolve':
+        return await dissolveTeam(openid, event.teamId)
+      case 'mute':
+        return await muteTarget(openid, event.target, !!event.muted)
       case 'updateView':
         return await updateView(openid, event.teamId) // teamId 为 null 表示个人视角（高频，轻量写库）
       case 'getMy':
@@ -75,7 +79,7 @@ async function createTeam(openid, name) {
     }
   })
 
-  // 更新用户表：加入队伍（不自动绑定，绑定由用户在队伍管理页手动设置）
+  // 更新用户表：加入队伍（默认订阅该队伍推送，无需额外操作）
   await upsertUser(openid, {
     addTeamId: teamId,
     updatedAt: new Date().toISOString()
@@ -125,7 +129,7 @@ async function joinTeam(openid, inviteCode) {
     }
   })
 
-  // 更新用户表：加入队伍（不自动绑定，保持原有绑定不变）
+  // 更新用户表：加入队伍（默认订阅该队伍推送，无需额外操作）
   await upsertUser(openid, {
     addTeamId: team.teamId,
     updatedAt: new Date().toISOString()
@@ -140,35 +144,10 @@ async function joinTeam(openid, inviteCode) {
   }
 }
 
-// --- 退出队伍 ---
+// --- 退出队伍（数据归属队伍：退出不带走、不影响队伍内数据） ---
 async function leaveTeam(openid, teamId) {
   if (!teamId) {
     return { code: -1, msg: '缺少队伍 ID' }
-  }
-
-  // 查找该用户在队伍中创建的所有物品
-  const itemsRes = await db.collection(COLLECTIONS.ITEMS)
-    .where({ _openid: openid, groupId: teamId })
-    .get()
-
-  // 复制物品给队伍（副本 _openid 标记为 team:xxx，groupId 保留）
-  for (const item of itemsRes.data) {
-    const { _id, ...itemData } = item
-    await db.collection(COLLECTIONS.ITEMS).add({
-      data: {
-        ...itemData,
-        _openid: 'team:' + teamId, // 标记为队伍副本
-        id: Date.now().toString() + '_' + randomStr(4), // 新 ID
-        createdAt: new Date().toISOString()
-      }
-    })
-  }
-
-  // 将原件移回个人空间（移除 groupId）
-  for (const item of itemsRes.data) {
-    await db.collection(COLLECTIONS.ITEMS)
-      .doc(item._id)
-      .update({ data: { groupId: _.remove() } })
   }
 
   // 移除成员记录
@@ -176,98 +155,222 @@ async function leaveTeam(openid, teamId) {
     .where({ teamId, openid })
     .get()
 
-  if (memberRes.data.length > 0) {
-    await db.collection(COLLECTIONS.MEMBERS).doc(memberRes.data[0]._id).remove()
+  if (memberRes.data.length === 0) {
+    return { code: -1, msg: '你不是该队伍的成员' }
   }
 
-  // 更新用户表：移除队伍，清理绑定
-  const userRes = await db.collection(COLLECTIONS.USERS)
-    .where({ openid })
-    .get()
+  await db.collection(COLLECTIONS.MEMBERS).doc(memberRes.data[0]._id).remove()
 
-  if (userRes.data.length > 0) {
-    const user = userRes.data[0]
-    const newTeamIds = (Array.isArray(user.teamIds) ? user.teamIds : []).filter(id => id !== teamId)
-    const newBound = user.boundGroupId === teamId ? null : user.boundGroupId
-    // 视角指向已退出的队伍时重置（绑定被清理则回退到绑定目标）
-    const newView = user.viewGroupId === teamId ? newBound : (user.viewGroupId || null)
+  // 更新用户表：移除队伍、重置指向该队伍的视角与订阅（数据与贡献均留在队伍）
+  await resetUserOnLeave(openid, teamId)
 
-    await db.collection(COLLECTIONS.USERS).doc(user._id).update({
-      data: {
-        teamIds: newTeamIds,
-        boundGroupId: newBound,
-        viewGroupId: newView,
-        updatedAt: new Date().toISOString()
-      }
-    })
-  }
-
-  // 剥离该用户在队伍中的成就贡献（账本删除 + 队伍聚合扣减）
-  await stripTeamContributions(openid, teamId)
-
-  // 检查队伍是否还有成员，如果没有则解散（清理副本）
+  // 检查队伍是否还有成员，最后一人退出则队伍解散
   const remainRes = await db.collection(COLLECTIONS.MEMBERS)
     .where({ teamId })
     .count()
 
   if (remainRes.total === 0) {
-    // 删除队伍记录
-    const teamDocs = await db.collection(COLLECTIONS.TEAMS)
-      .where({ teamId })
-      .get()
-    if (teamDocs.data.length > 0) {
-      await db.collection(COLLECTIONS.TEAMS).doc(teamDocs.data[0]._id).remove()
-    }
-
-    // 清理队伍副本
-    const copies = await db.collection(COLLECTIONS.ITEMS)
-      .where({ _openid: 'team:' + teamId })
-      .get()
-    for (const copy of copies.data) {
-      await db.collection(COLLECTIONS.ITEMS).doc(copy._id).remove()
-    }
-
-    // 清理队伍成就聚合与残留账本事件
-    const tsDocs = await db.collection(COLLECTIONS.TEAM_STATS)
-      .where({ teamId })
-      .get()
-    for (const d of tsDocs.data) {
-      await db.collection(COLLECTIONS.TEAM_STATS).doc(d._id).remove()
-    }
-    const evDocs = await db.collection(COLLECTIONS.EVENTS)
-      .where({ teamId })
-      .get()
-    for (const d of evDocs.data) {
-      await db.collection(COLLECTIONS.EVENTS).doc(d._id).remove()
-    }
+    await cleanupTeam(teamId)
   }
 
   return { code: 0, msg: '已退出队伍' }
 }
 
-// --- 切换绑定 ---
-async function bindTeam(openid, teamId) {
-  // teamId 为 null 表示绑定个人视角
-  if (teamId) {
-    // 校验是否为该队伍成员
-    const memberRes = await db.collection(COLLECTIONS.MEMBERS)
-      .where({ teamId, openid })
-      .get()
+/**
+ * 退出队伍时重置用户状态：
+ * teamIds 移除该队伍；视角指向该队伍则回到个人；
+ * 静音列表移除该队伍（该队伍已不可订阅）；
+ * boundGroupId 为历史字段，指向该队伍时一并清理
+ */
+async function resetUserOnLeave(openid, teamId) {
+  const userRes = await db.collection(COLLECTIONS.USERS)
+    .where({ openid })
+    .get()
 
-    if (memberRes.data.length === 0) {
+  if (userRes.data.length === 0) return
+
+  const user = userRes.data[0]
+  const newTeamIds = (Array.isArray(user.teamIds) ? user.teamIds : []).filter(id => id !== teamId)
+  const data = {
+    teamIds: newTeamIds,
+    mutedGroups: (Array.isArray(user.mutedGroups) ? user.mutedGroups : []).filter(t => t !== teamId),
+    updatedAt: new Date().toISOString()
+  }
+  if (user.viewGroupId === teamId) data.viewGroupId = null
+  if (user.boundGroupId === teamId) data.boundGroupId = null
+
+  await db.collection(COLLECTIONS.USERS).doc(user._id).update({ data })
+}
+
+// --- 修改队伍名称（仅创建者） ---
+async function renameTeam(openid, teamId, name) {
+  if (!teamId) {
+    return { code: -1, msg: '缺少队伍 ID' }
+  }
+  if (!name || !name.trim()) {
+    return { code: -1, msg: '请输入队伍名称' }
+  }
+
+  const teamRes = await db.collection(COLLECTIONS.TEAMS)
+    .where({ teamId })
+    .get()
+
+  if (teamRes.data.length === 0) {
+    return { code: -1, msg: '队伍不存在' }
+  }
+
+  if (teamRes.data[0].creatorOpenid !== openid) {
+    return { code: -1, msg: '只有创建者可以修改队伍名称' }
+  }
+
+  const newName = name.trim()
+  await db.collection(COLLECTIONS.TEAMS)
+    .doc(teamRes.data[0]._id)
+    .update({ data: { name: newName, updatedAt: new Date().toISOString() } })
+
+  return { code: 0, data: { name: newName } }
+}
+
+// --- 解散队伍（仅创建者，数据全部删除，不可恢复） ---
+async function dissolveTeam(openid, teamId) {
+  if (!teamId) {
+    return { code: -1, msg: '缺少队伍 ID' }
+  }
+
+  const teamRes = await db.collection(COLLECTIONS.TEAMS)
+    .where({ teamId })
+    .get()
+
+  if (teamRes.data.length === 0) {
+    return { code: -1, msg: '队伍不存在' }
+  }
+
+  if (teamRes.data[0].creatorOpenid !== openid) {
+    return { code: -1, msg: '只有创建者可以解散队伍' }
+  }
+
+  await cleanupTeam(teamId)
+  return { code: 0, msg: '队伍已解散' }
+}
+
+/**
+ * 解散队伍：删除队伍与成员记录、队内全部物品（数据归属队伍，随队伍销毁）、
+ * 队伍成就聚合与账本事件，并重置所有成员的用户状态。
+ * 供「创建者主动解散」与「最后一人退出自动解散」复用。
+ */
+async function cleanupTeam(teamId) {
+  // 收集成员 openid（用于重置用户状态）
+  const membersRes = await db.collection(COLLECTIONS.MEMBERS)
+    .where({ teamId })
+    .limit(1000)
+    .get()
+  const memberOpenids = (membersRes.data || []).map(m => m.openid)
+
+  // 删除队伍记录与成员记录
+  const teamDocs = await db.collection(COLLECTIONS.TEAMS)
+    .where({ teamId })
+    .get()
+  for (const d of teamDocs.data) {
+    await db.collection(COLLECTIONS.TEAMS).doc(d._id).remove()
+  }
+  for (const m of membersRes.data) {
+    await db.collection(COLLECTIONS.MEMBERS).doc(m._id).remove()
+  }
+
+  // 删除队内全部物品（groupId = teamId）；兼容历史副本（_openid = 'team:xxx'）
+  const itemDocs = await db.collection(COLLECTIONS.ITEMS)
+    .where({ groupId: teamId })
+    .limit(1000)
+    .get()
+  for (const d of itemDocs.data) {
+    await db.collection(COLLECTIONS.ITEMS).doc(d._id).remove()
+  }
+  const copyDocs = await db.collection(COLLECTIONS.ITEMS)
+    .where({ _openid: 'team:' + teamId })
+    .limit(1000)
+    .get()
+  for (const d of copyDocs.data) {
+    await db.collection(COLLECTIONS.ITEMS).doc(d._id).remove()
+  }
+
+  // 删除队伍成就聚合与账本事件
+  const tsDocs = await db.collection(COLLECTIONS.TEAM_STATS)
+    .where({ teamId })
+    .get()
+  for (const d of tsDocs.data) {
+    await db.collection(COLLECTIONS.TEAM_STATS).doc(d._id).remove()
+  }
+  const evDocs = await db.collection(COLLECTIONS.EVENTS)
+    .where({ teamId })
+    .limit(1000)
+    .get()
+  for (const d of evDocs.data) {
+    await db.collection(COLLECTIONS.EVENTS).doc(d._id).remove()
+  }
+
+  // 重置成员用户状态：移除队伍、视角/绑定/静音指向该队伍的均重置
+  const usersRes = await db.collection(COLLECTIONS.USERS)
+    .where({ openid: _.in(memberOpenids) })
+    .get()
+  for (const user of usersRes.data) {
+    const data = {
+      teamIds: (Array.isArray(user.teamIds) ? user.teamIds : []).filter(id => id !== teamId),
+      mutedGroups: (Array.isArray(user.mutedGroups) ? user.mutedGroups : []).filter(t => t !== teamId),
+      updatedAt: new Date().toISOString()
+    }
+    if (user.viewGroupId === teamId) data.viewGroupId = null
+    if (user.boundGroupId === teamId) data.boundGroupId = null
+    await db.collection(COLLECTIONS.USERS).doc(user._id).update({ data })
+  }
+}
+
+// --- 订阅静音开关（个人 / 某支队伍，推送汇总所有未静音的订阅目标） ---
+async function muteTarget(openid, target, muted) {
+  if (!target) {
+    return { code: -1, msg: '缺少目标' }
+  }
+
+  // 队伍目标需校验成员资格；'personal' 表示个人空间
+  if (target !== 'personal') {
+    const memberRes = await db.collection(COLLECTIONS.MEMBERS)
+      .where({ teamId: target, openid })
+      .count()
+    if (memberRes.total === 0) {
       return { code: -1, msg: '你不是该队伍的成员' }
     }
   }
 
-  await upsertUser(openid, {
-    boundGroupId: teamId || null,
-    updatedAt: new Date().toISOString()
-  })
+  const userRes = await db.collection(COLLECTIONS.USERS)
+    .where({ openid })
+    .get()
 
-  return { code: 0, data: { boundGroupId: teamId || null } }
+  let mutedGroups = []
+  let userId = null
+  if (userRes.data.length > 0) {
+    const user = userRes.data[0]
+    userId = user._id
+    mutedGroups = Array.isArray(user.mutedGroups) ? user.mutedGroups : []
+  }
+
+  if (muted) {
+    if (!mutedGroups.includes(target)) mutedGroups.push(target)
+  } else {
+    mutedGroups = mutedGroups.filter(t => t !== target)
+  }
+
+  const data = { mutedGroups, updatedAt: new Date().toISOString() }
+  if (userId) {
+    await db.collection(COLLECTIONS.USERS).doc(userId).update({ data })
+  } else {
+    await db.collection(COLLECTIONS.USERS).add({
+      data: { openid, teamIds: [], boundGroupId: null, viewGroupId: null, ...data }
+    })
+  }
+
+  return { code: 0, data: { mutedGroups } }
 }
 
-// --- 切换视角（高频操作，同步到后端，不影响绑定与推送） ---
+// --- 切换视角（高频操作，同步到后端，不影响订阅与推送） ---
 async function updateView(openid, teamId) {
   // teamId 为 null 表示个人视角
   if (teamId) {
@@ -289,7 +392,7 @@ async function updateView(openid, teamId) {
   return { code: 0, data: { viewGroupId: teamId || null } }
 }
 
-// --- 获取我的队伍列表 + 当前绑定 + 当前视角 ---
+// --- 获取我的队伍列表 + 静音订阅 + 当前视角 ---
 async function getMyTeams(openid) {
   // 获取用户信息
   const userRes = await db.collection(COLLECTIONS.USERS)
@@ -299,8 +402,8 @@ async function getMyTeams(openid) {
   const user = userRes.data.length > 0 ? userRes.data[0] : null
   const rawTeamIds = user?.teamIds
   let teamIds = Array.isArray(rawTeamIds) ? rawTeamIds : []
-  const boundGroupId = user?.boundGroupId || null
   const viewGroupId = user?.viewGroupId || null
+  const mutedGroups = Array.isArray(user?.mutedGroups) ? user.mutedGroups : []
 
   // 历史数据被污染（teamIds 为非数组）：从成员表重建并回写修复
   if (user && rawTeamIds !== undefined && !Array.isArray(rawTeamIds)) {
@@ -316,7 +419,7 @@ async function getMyTeams(openid) {
   if (teamIds.length === 0) {
     return {
       code: 0,
-      data: { teams: [], boundGroupId: null, viewGroupId: null }
+      data: { teams: [], mutedGroups, viewGroupId: null }
     }
   }
 
@@ -339,7 +442,7 @@ async function getMyTeams(openid) {
       creatorOpenid: team.creatorOpenid,
       memberCount: memberCount.total,
       isCreator: team.creatorOpenid === openid,
-      isBound: boundGroupId === team.teamId
+      isMuted: mutedGroups.includes(team.teamId)
     })
   }
 
@@ -348,7 +451,7 @@ async function getMyTeams(openid) {
 
   return {
     code: 0,
-    data: { teams, boundGroupId, viewGroupId: validView }
+    data: { teams, mutedGroups, viewGroupId: validView }
   }
 }
 
@@ -453,8 +556,9 @@ async function upsertUser(openid, updates) {
     // 首次使用：初始化用户记录
     const initData = { openid, ...rest }
     initData.teamIds = addTeamId ? [addTeamId] : []
-    if (initData.boundGroupId === undefined) initData.boundGroupId = null
+    if (initData.boundGroupId === undefined) initData.boundGroupId = null // 历史字段，已废弃（推送改为订阅集合）
     if (initData.viewGroupId === undefined) initData.viewGroupId = null
+    if (initData.mutedGroups === undefined) initData.mutedGroups = []
     await db.collection(COLLECTIONS.USERS).add({ data: initData })
   }
 }
@@ -477,52 +581,6 @@ async function ensureTeamStats(teamId) {
       updatedAt: new Date().toISOString()
     }
   })
-}
-
-/**
- * 剥离用户在某队伍的成就贡献：
- * 删除该用户在该队伍维度的全部账本事件，并按类型/价值扣减队伍聚合
- */
-async function stripTeamContributions(openid, teamId) {
-  const evRes = await db.collection(COLLECTIONS.EVENTS)
-    .where({ _openid: openid, teamId })
-    .limit(1000)
-    .get()
-
-  const events = evRes.data
-  if (events.length === 0) return
-
-  // 统计扣减量
-  const delta = { tracked: 0, saved: 0, savedValue: 0, expired: 0 }
-  for (const ev of events) {
-    if (ev.type === 'tracked') {
-      delta.tracked += 1
-    } else if (ev.type === 'saved') {
-      delta.saved += 1
-      delta.savedValue += ev.value || 0
-    } else if (ev.type === 'expired') {
-      delta.expired += 1
-    }
-  }
-
-  // 删除账本事件
-  for (const ev of events) {
-    await db.collection(COLLECTIONS.EVENTS).doc(ev._id).remove()
-  }
-
-  // 扣减队伍聚合
-  const tsRes = await db.collection(COLLECTIONS.TEAM_STATS).where({ teamId }).get()
-  if (tsRes.data.length > 0) {
-    await db.collection(COLLECTIONS.TEAM_STATS).doc(tsRes.data[0]._id).update({
-      data: {
-        totalTracked: _.inc(-delta.tracked),
-        totalSaved: _.inc(-delta.saved),
-        totalSavedValue: _.inc(-delta.savedValue),
-        totalExpired: _.inc(-delta.expired),
-        updatedAt: new Date().toISOString()
-      }
-    })
-  }
 }
 
 /**

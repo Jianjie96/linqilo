@@ -47,8 +47,8 @@ Page({
     // 自定义页头
     statusBarHeight: 20,
     headerHeight: 88,
-    // 当前视角显示（本地内存态，切换不影响绑定）
-    boundTeamName: '个人',
+    // 当前视角显示（同步后端，切换不影响推送订阅）
+    viewTeamName: '个人',
     viewGroupId: null,
     showSwitcher: false,
     switcherOptions: [],
@@ -104,7 +104,7 @@ Page({
     const viewTeam = teams.find(t => t.teamId === viewGroupId)
     this.setData({
       viewGroupId,
-      boundTeamName: viewTeam ? viewTeam.name : '个人',
+      viewTeamName: viewTeam ? viewTeam.name : '个人',
       // 构建切换选项：个人 + 已加入的队伍
       switcherOptions: [
         { teamId: null, name: '个人', iconClass: 'icon-user-green', isActive: !viewGroupId },
@@ -469,7 +469,7 @@ Page({
     this.setData({ showBingo: false })
   },
 
-  // 加载成就横幅文案（按当前绑定视角：个人 / 队伍）
+  // 加载成就横幅文案（跟随视角：个人 / 队伍）
   async loadAchievementBanner() {
     try {
       const groupId = app.getViewGroupId()
@@ -494,8 +494,8 @@ Page({
       let sub = ''
       if (totalSaved > 0) {
         text = `${subjectPrefix}已避免 ${totalSaved} 件物品过期`
-        if (data.totalUsers > 0 && data.percentile > 0) {
-          sub = `超过 ${data.percentile}% 的${rivalWord}，查看详情`
+        if (data.totalSubjects > 0 && data.percentile > 0) {
+          sub = `超过全网 ${data.percentile}% 的${rivalWord}，查看详情`
         } else {
           sub = '查看你的成就详情'
         }

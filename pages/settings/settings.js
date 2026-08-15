@@ -9,7 +9,7 @@ Page({
     isSubscribed: false,
     isSyncing: false,
     cloudEnabled: false,
-    boundTeamName: '个人',
+    subscribeSummary: '个人',
     aboutInfo: {
       name: '叮咚到期',
       version: '1.0.0'
@@ -24,21 +24,25 @@ Page({
   onShow() {
     this.loadSettings()
     this.checkSubscriptionStatus()
-    this._updateBindingDisplay()
+    this._updateSubscribeSummary()
   },
 
   loadSettings() {
     this.setData({
       totalItems: app.globalData.items.length
     })
-    this._updateBindingDisplay()
+    this._updateSubscribeSummary()
   },
 
-  // 更新绑定状态显示
-  _updateBindingDisplay() {
-    const { boundTeamName } = app.globalData
+  // 推送订阅摘要：未静音的订阅目标数（个人 + 队伍）
+  _updateSubscribeSummary() {
+    const { mutedGroups, teams } = app.globalData
+    const muted = Array.isArray(mutedGroups) ? mutedGroups : []
+    const personalOn = !muted.includes('personal')
+    const teamOnCount = (teams || []).filter(t => !muted.includes(t.teamId)).length
+    const total = (personalOn ? 1 : 0) + teamOnCount
     this.setData({
-      boundTeamName: boundTeamName || '个人'
+      subscribeSummary: total > 0 ? `订阅 ${total} 个目标` : '全部静音'
     })
   },
 

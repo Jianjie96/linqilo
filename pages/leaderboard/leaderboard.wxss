@@ -118,6 +118,26 @@
   letter-spacing: 2rpx;
 }
 
+/* 英雄区价值（已省下，跟随视角聚合） */
+.hero-value {
+  display: flex;
+  align-items: baseline;
+  gap: 12rpx;
+  margin-bottom: 20rpx;
+}
+
+.hv-label {
+  font-size: 24rpx;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.hv-num {
+  font-size: 36rpx;
+  font-weight: 700;
+  color: #F6D98D;
+  font-family: monospace;
+}
+
 /* 百分位 */
 .percentile {
   margin-bottom: 8rpx;

@@ -57,7 +57,7 @@
     <view class="settings-item" bindtap="goTeam">
       <view class="settings-item-icon icon icon-users-dark"></view>
       <text class="settings-item-label">队伍管理</text>
-      <text class="settings-item-value">{{boundTeamName}}</text>
+      <text class="settings-item-value">{{subscribeSummary}}</text>
       <view class="settings-item-arrow icon icon-chevron-right-gray"></view>
     </view>
   </view>

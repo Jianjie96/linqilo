@@ -5,9 +5,9 @@ const shareMixin = require('../../utils/share.js')
 Page({
   ...shareMixin,
   data: {
-    // 当前绑定
-    boundGroupId: null,
-    boundTeamName: '个人',
+    // 推送订阅（默认订阅个人 + 所有队伍，可单独静音）
+    mutedGroups: [],
+    personalMuted: false,
 
     // 我的队伍
     teams: [],
@@ -40,12 +40,12 @@ Page({
     this.setData({ loading: true })
     try {
       await app.loadTeamInfo()
-      const { teams, boundGroupId, boundTeamName } = app.globalData
+      const { teams, mutedGroups } = app.globalData
       this.setData({
         teams,
         hasTeams: teams.length > 0,
-        boundGroupId,
-        boundTeamName: boundTeamName || '个人',
+        mutedGroups,
+        personalMuted: mutedGroups.includes('personal'),
         loading: false
       })
     } catch (err) {
@@ -75,7 +75,7 @@ Page({
     try {
       const result = await syncUtil.createTeam(name)
       wx.hideLoading()
-      // 创建不自动绑定，仅把视角切到新队伍方便查看
+      // 创建后视角切到新队伍方便查看；推送默认订阅该队伍，无需额外操作
       app.switchView(result.data.teamId)
       wx.showToast({ title: '创建成功', icon: 'success' })
       this.setData({ newTeamName: '' })
@@ -98,6 +98,7 @@ Page({
     try {
       const result = await syncUtil.joinTeam(code)
       wx.hideLoading()
+      // 加入后默认订阅该队伍推送
       wx.showToast({ title: `已加入「${result.data.name}」`, icon: 'success' })
       this.setData({ joinCode: '' })
       await this.loadData()
@@ -107,32 +108,29 @@ Page({
     }
   },
 
-  // --- 更换绑定（低频、写库；强提醒：绑定决定消息推送范围） ---
-  switchBinding(e) {
-    const teamId = e.currentTarget.dataset.teamId || null
-    const name = teamId
-      ? (this.data.teams.find(t => t.teamId === teamId) || {}).name
-      : '个人'
+  // --- 静音开关（推送汇总所有未静音的订阅目标） ---
+  async toggleMute(e) {
+    const target = e.currentTarget.dataset.target
+    if (!target) return
 
-    wx.showModal({
-      title: '确认绑定',
-      content: `绑定决定消息推送范围。\n更换后，推送将只针对「${name}」。\n确定将绑定目标更换为「${name}」吗？`,
-      confirmText: '确认绑定',
-      success: async (res) => {
-        if (!res.confirm) return
-
-        wx.showLoading({ title: '绑定中...' })
-        try {
-          await app.setBinding(teamId)
-          wx.hideLoading()
-          wx.showToast({ title: `已绑定「${name}」`, icon: 'success' })
-          await this.loadData()
-        } catch (err) {
-          wx.hideLoading()
-          wx.showToast({ title: err.message || '绑定失败', icon: 'none' })
-        }
-      }
-    })
+    try {
+      const muted = await app.toggleMute(target)
+      this.setData({
+        mutedGroups: app.globalData.mutedGroups,
+        personalMuted: app.globalData.mutedGroups.includes('personal'),
+        teams: this.data.teams.map(t => ({
+          ...t,
+          isMuted: app.globalData.mutedGroups.includes(t.teamId)
+        }))
+      })
+      wx.showToast({
+        title: muted ? '已静音' : '已开启推送',
+        icon: 'none'
+      })
+    } catch (err) {
+      console.error('切换静音失败:', err)
+      wx.showToast({ title: err.message || '操作失败', icon: 'none' })
+    }
   },
 
   // --- 查看队伍详情 ---
@@ -201,7 +199,74 @@ Page({
     })
   },
 
-  // --- 彻底退出队伍（低频、强提醒：物品副本归还 + 成就贡献剥离 + 绑定重置） ---
+  // --- 修改队伍名称（仅创建者） ---
+  renameTeam() {
+    const teamId = this.data.detailTeam?.teamId
+    const oldName = this.data.detailTeam?.name
+    if (!teamId) return
+
+    wx.showModal({
+      title: '修改队伍名称',
+      editable: true,
+      placeholderText: oldName,
+      content: oldName,
+      success: async (res) => {
+        if (!res.confirm) return
+        const name = (res.content || '').trim()
+        if (!name) {
+          wx.showToast({ title: '队伍名称不能为空', icon: 'none' })
+          return
+        }
+        if (name === oldName) return
+
+        wx.showLoading({ title: '保存中...' })
+        try {
+          await syncUtil.renameTeam(teamId, name)
+          wx.hideLoading()
+          wx.showToast({ title: '已修改', icon: 'success' })
+          this.setData({ 'detailTeam.name': name })
+          await this.loadData()
+        } catch (err) {
+          wx.hideLoading()
+          wx.showToast({ title: err.message || '修改失败', icon: 'none' })
+        }
+      }
+    })
+  },
+
+  // --- 解散队伍（仅创建者，极低频、强提醒：数据全部删除不可恢复） ---
+  dissolveTeam() {
+    const teamId = this.data.detailTeam?.teamId
+    const teamName = this.data.detailTeam?.name
+    if (!teamId) return
+
+    wx.showModal({
+      title: '解散队伍',
+      content: `解散「${teamName}」后，队伍内的全部数据将被删除且不可恢复，所有成员的推送订阅也会随之移除。\n\n确定解散吗？`,
+      confirmColor: '#FF3B30',
+      confirmText: '确认解散',
+      success: async (res) => {
+        if (!res.confirm) return
+
+        wx.showLoading({ title: '解散中...' })
+        try {
+          await syncUtil.dissolveTeam(teamId)
+          wx.hideLoading()
+          wx.showToast({ title: '队伍已解散', icon: 'success' })
+          this.setData({ showDetail: false })
+          // 视角/队伍列表/静音集合均已变化，重新同步
+          await app.loadTeamInfo()
+          if (app.getViewGroupId() === null) app.reloadItems()
+          await this.loadData()
+        } catch (err) {
+          wx.hideLoading()
+          wx.showToast({ title: err.message || '解散失败', icon: 'none' })
+        }
+      }
+    })
+  },
+
+  // --- 彻底退出队伍（极低频、强提醒：数据归属队伍，退出不影响队内数据） ---
   leaveTeam() {
     const teamId = this.data.detailTeam?.teamId
     const teamName = this.data.detailTeam?.name
@@ -209,7 +274,7 @@ Page({
 
     wx.showModal({
       title: '彻底退出队伍',
-      content: `退出「${teamName}」后：\n· 你创建的物品将复制一份留给队伍，原件回到个人空间\n· 你的成就贡献将从队伍中剥离\n· 若该队伍是你的绑定目标，绑定将重置为个人，推送随之变化\n\n确定退出吗？`,
+      content: `退出「${teamName}」后：\n· 你在队伍内创建的数据归队伍所有，退出后留在队伍，队友可继续使用\n· 你对该队伍的操作权限将被移除\n· 若队伍只剩你一人，退出后队伍自动解散\n\n确定退出吗？`,
       confirmColor: '#FF3B30',
       confirmText: '确认退出',
       success: async (res) => {
@@ -221,7 +286,7 @@ Page({
           wx.hideLoading()
           wx.showToast({ title: '已退出', icon: 'success' })
           this.setData({ showDetail: false })
-          // 重新同步绑定/视角，并按新视角重新加载物品缓存
+          // 视角可能被重置，重新同步并按当前视角加载物品
           await app.loadTeamInfo()
           app.reloadItems()
           await this.loadData()

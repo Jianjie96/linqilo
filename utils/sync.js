@@ -3,7 +3,8 @@
  * 
  * 所有操作通过云函数调用，Network 面板可见
  * 云函数：items（action: get | stats | add | update | delete）
- * 云函数：teams（action: create | join | leave | bind | getMy | getMembers | refreshCode）
+ * 云函数：teams（action: create | join | leave | rename | dissolve | mute | updateView | getMy | getMembers | refreshCode）
+ * 云函数：leaderboard（action: recordAdd | recordSave | recordExpired | getStats）
  */
 
 const COLLECTION_SUBSCRIPTIONS = 'subscriptions'
@@ -92,7 +93,7 @@ async function deleteCloudItem(itemId, groupId) {
   await callCloud('items', { action: 'delete', itemId, groupId })
 }
 
-// --- 排行榜 / 成就系统（跟随视角） ---
+// --- 排行榜 / 成就系统（跟随视角，混合池排名） ---
 // teamId：不传或 'personal' = 个人视角；传队伍 id = 队伍视角（队内操作双写个人与队伍聚合）
 // itemId：用于同一物品同类型事件去重，防止多人重复操作同一物品虚增统计
 
@@ -108,7 +109,7 @@ function recordExpired(teamId, itemId) {
   return callCloud('leaderboard', { action: 'recordExpired', teamId, itemId }).catch(() => {})
 }
 
-// 获取当前视角的统计 + 排行列表（个人视角：全体个人排行；队伍视角：队内成员排行）
+// 获取当前视角的统计 + 排行列表（等级/价值跟视角；「超过全网」混合池：所有个人与队伍同台排名）
 function getLeaderboardStats(teamId) {
   return callCloud('leaderboard', { action: 'getStats', teamId })
 }
@@ -175,11 +176,20 @@ function leaveTeam(teamId) {
   return callCloud('teams', { action: 'leave', teamId })
 }
 
-function bindTeam(teamId) {
-  return callCloud('teams', { action: 'bind', teamId })
+function renameTeam(teamId, name) {
+  return callCloud('teams', { action: 'rename', teamId, name })
 }
 
-// 切换视角（高频，轻量同步后端，不影响绑定与推送）
+function dissolveTeam(teamId) {
+  return callCloud('teams', { action: 'dissolve', teamId })
+}
+
+// 订阅静音开关（target: 'personal' 或队伍 id；推送汇总所有未静音的订阅目标）
+function muteTarget(target, muted) {
+  return callCloud('teams', { action: 'mute', target, muted })
+}
+
+// 切换视角（高频，轻量同步后端，不影响订阅与推送）
 function updateView(teamId) {
   return callCloud('teams', { action: 'updateView', teamId })
 }
@@ -213,7 +223,9 @@ module.exports = {
   createTeam,
   joinTeam,
   leaveTeam,
-  bindTeam,
+  renameTeam,
+  dissolveTeam,
+  muteTarget,
   updateView,
   getMyTeams,
   getTeamMembers,

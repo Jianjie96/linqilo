@@ -8,10 +8,9 @@ App({
     },
     openid: '',
     // 组队相关
-    boundGroupId: null,   // 绑定目标（唯一，决定消息推送范围），null = 个人
-    viewGroupId: undefined, // 当前视角（纯本地内存态）：undefined = 未初始化，null = 个人，队伍 id = 队伍视角
-    teams: [],            // 已加入的队伍列表
-    boundTeamName: ''     // 绑定目标名称（用于 UI 显示）
+    mutedGroups: [],      // 推送静音目标集合（'personal' 或队伍 id），默认全部订阅
+    viewGroupId: undefined, // 当前视角（同步后端）：undefined = 未初始化，null = 个人，队伍 id = 队伍视角
+    teams: []             // 已加入的队伍列表
   },
 
   _loadItemsPromise: null,  // 防重入：复用正在进行的请求
@@ -72,9 +71,9 @@ App({
     return this.globalData.viewGroupId || null
   },
 
-  // 获取当前「绑定」的 groupId（仅绑定相关逻辑使用，决定推送范围）
-  getBoundGroupId() {
-    return this.globalData.boundGroupId
+  // 判断目标（'personal' 或队伍 id）是否已静音
+  isMuted(target) {
+    return this.globalData.mutedGroups.includes(target)
   },
 
   // 从云端加载所有物品（防重入 + 缓存）
@@ -106,7 +105,7 @@ App({
     return this._loadItemsPromise
   },
 
-  // 强制重新加载（切换绑定后调用）
+  // 强制重新加载（切换视角后调用）
   reloadItems() {
     this._lastLoadTime = 0
     this._loadItemsPromise = null
@@ -150,26 +149,18 @@ App({
 
   // --- 组队操作 ---
 
-  // 加载组队信息（队伍列表 + 绑定目标 + 后端视角；初始化/校验本地视角）
+  // 加载组队信息（队伍列表 + 静音订阅 + 后端视角；初始化/校验本地视角）
   async loadTeamInfo() {
     try {
       const result = await cloudApi.getMyTeams()
-      const { teams, boundGroupId, viewGroupId } = result.data || {}
+      const { teams, mutedGroups, viewGroupId } = result.data || {}
       this.globalData.teams = teams || []
-      this.globalData.boundGroupId = boundGroupId || null
+      this.globalData.mutedGroups = Array.isArray(mutedGroups) ? mutedGroups : []
 
-      // 视角与后端同步：若后端视角指向已退出的队伍，回退到绑定目标
+      // 视角与后端同步：若后端视角指向已退出的队伍，回退到个人视角
       const vg = viewGroupId || null
-      const stillIn = vg ? (teams || []).some(t => t.teamId === vg) : true
-      this.globalData.viewGroupId = stillIn ? vg : (boundGroupId || null)
-
-      // 查找绑定目标名称
-      if (boundGroupId && teams) {
-        const bound = teams.find(t => t.teamId === boundGroupId)
-        this.globalData.boundTeamName = bound ? bound.name : ''
-      } else {
-        this.globalData.boundTeamName = ''
-      }
+      const stillIn = vg ? this.globalData.teams.some(t => t.teamId === vg) : true
+      this.globalData.viewGroupId = stillIn ? vg : null
     } catch (err) {
       console.error('加载组队信息失败:', err)
     }
@@ -186,23 +177,13 @@ App({
     this._loadItemsPromise = null
   },
 
-  // 更换绑定（低频、写库、决定消息推送范围，调用前需强提醒）
-  async setBinding(teamId) {
-    await cloudApi.bindTeam(teamId)
-    this.globalData.boundGroupId = teamId || null
-    // 绑定更换后视角跟随
-    this.globalData.viewGroupId = teamId || null
-
-    if (teamId) {
-      const bound = this.globalData.teams.find(t => t.teamId === teamId)
-      this.globalData.boundTeamName = bound ? bound.name : ''
-    } else {
-      this.globalData.boundTeamName = ''
-    }
-
-    // 清空物品缓存，返回首页时按新视角重新拉取
-    this.globalData.items = []
-    this._lastLoadTime = 0
-    this._loadItemsPromise = null
+  // 切换推送静音（mute/unmute）：target 为 'personal' 或队伍 id
+  async toggleMute(target) {
+    const muted = !this.globalData.mutedGroups.includes(target)
+    await cloudApi.muteTarget(target, muted)
+    this.globalData.mutedGroups = muted
+      ? this.globalData.mutedGroups.concat(target)
+      : this.globalData.mutedGroups.filter(t => t !== target)
+    return muted
   }
 })

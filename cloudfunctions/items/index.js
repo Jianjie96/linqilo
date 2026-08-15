@@ -37,7 +37,7 @@ exports.main = async (event, context) => {
 /**
  * 构建查询条件
  * 个人视角：_openid === openid 且无 groupId
- * 队伍视角：groupId === teamId（不限 _openid，因为包含队伍副本）
+ * 队伍视角：groupId === teamId（数据归属队伍，队内成员共享）
  */
 function buildWhere(openid, groupId) {
   if (groupId) {

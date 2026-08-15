@@ -18,7 +18,7 @@
   box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.04);
 }
 
-/* 当前绑定 */
+/* 推送订阅 */
 .binding-card {
   display: flex;
   align-items: center;
@@ -29,6 +29,8 @@
   display: flex;
   align-items: center;
   gap: 16rpx;
+  flex: 1;
+  margin-right: 16rpx;
 }
 
 .binding-icon {
@@ -36,18 +38,52 @@
   height: 44rpx;
 }
 
+.binding-text {
+  display: flex;
+  flex-direction: column;
+}
+
 .binding-name {
-  font-size: 34rpx;
+  font-size: 32rpx;
   font-weight: 600;
   color: #333;
 }
 
-.binding-switch {
-  font-size: 26rpx;
-  color: #07C160;
-  padding: 8rpx 20rpx;
-  border: 2rpx solid #07C160;
-  border-radius: 28rpx;
+.binding-hint {
+  font-size: 22rpx;
+  color: #999;
+  margin-top: 4rpx;
+}
+
+/* 静音开关（订阅中=绿，已静音=灰） */
+.mute-switch {
+  width: 88rpx;
+  height: 48rpx;
+  border-radius: 24rpx;
+  background: #07C160;
+  position: relative;
+  flex-shrink: 0;
+  transition: background 0.2s;
+}
+
+.mute-switch.is-muted {
+  background: #D0D0D0;
+}
+
+.mute-knob {
+  position: absolute;
+  top: 4rpx;
+  left: 4rpx;
+  width: 40rpx;
+  height: 40rpx;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 2rpx 6rpx rgba(0, 0, 0, 0.15);
+  transition: left 0.2s;
+}
+
+.mute-switch.is-muted .mute-knob {
+  left: 44rpx;
 }
 
 /* 创建/加入 */
@@ -103,13 +139,6 @@
   border-bottom: none;
 }
 
-.team-item-bound {
-  background: rgba(7, 193, 96, 0.04);
-  margin: 0 -32rpx;
-  padding: 24rpx 32rpx;
-  border-radius: 12rpx;
-}
-
 .team-item-left {
   display: flex;
   align-items: center;
@@ -143,23 +172,6 @@
   display: flex;
   align-items: center;
   gap: 16rpx;
-}
-
-.bound-tag {
-  font-size: 22rpx;
-  color: #fff;
-  background: #07C160;
-  padding: 4rpx 16rpx;
-  border-radius: 16rpx;
-  font-weight: 500;
-}
-
-.bind-btn {
-  font-size: 24rpx;
-  color: #07C160;
-  padding: 6rpx 20rpx;
-  border: 2rpx solid #07C160;
-  border-radius: 20rpx;
 }
 
 .detail-btn {
@@ -286,6 +298,51 @@
 
 .detail-actions {
   margin-top: 32rpx;
+}
+
+/* 创建者操作行：修改名称 / 解散队伍 */
+.detail-action-row {
+  display: flex;
+  gap: 20rpx;
+  margin-bottom: 20rpx;
+}
+
+.btn-secondary,
+.btn-dissolve {
+  flex: 1;
+  height: 80rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8rpx;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  background: #fff;
+  border-radius: 16rpx;
+  font-size: 28rpx;
+  font-weight: 500;
+  line-height: normal;
+}
+
+.btn-secondary {
+  color: #07C160;
+  border: 2rpx solid #07C160;
+}
+
+.btn-dissolve {
+  color: #FF3B30;
+  border: 2rpx solid #FF3B30;
+}
+
+.btn-edit-icon {
+  width: 32rpx;
+  height: 32rpx;
+}
+
+.btn-secondary::after,
+.btn-dissolve::after {
+  border: none;
 }
 
 .btn-leave {

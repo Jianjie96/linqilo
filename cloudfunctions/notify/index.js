@@ -14,6 +14,10 @@ const _ = db.command
  *   2. 查询所有用户的临期物品
  *   3. 给已订阅的用户发送微信订阅消息
  * 
+ * 推送范围（订阅集合模型）：
+ *   用户的订阅目标 = 个人空间 + 已加入的所有队伍，减去手动静音（users.mutedGroups）的目标；
+ *   一条推送汇总所有订阅目标的临期数据（个人与队伍分别统计件数）。
+ * 
  * 使用前提：
  *   1. 在微信公众平台「订阅消息」中选用模板并获取 templateId
  *   2. 将 templateId 填入下方 TEMPLATE_ID 常量
@@ -146,52 +150,40 @@ exports.main = async (event, context) => {
     return await testNotify()
   }
 
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-  const todayStr = formatDate(today)
-
   try {
-    // 1. 查询所有用户的绑定关系
-    const usersRes = await db.collection('users').get()
-    const users = usersRes.data || []
-
-    // 没有 users 表记录的用户走默认个人视角
-    // 构建每个用户需要检查的物品范围
-    const userNotifyMap = {} // openid -> { items: [], boundType: 'personal' | 'team' }
-
-    for (const user of users) {
-      const openid = user.openid
-      const boundGroupId = user.boundGroupId || null
-
-      userNotifyMap[openid] = {
-        boundGroupId,
-        boundType: boundGroupId ? 'team' : 'personal',
-        items: []
-      }
-    }
-
-    // 2. 查询所有物品
-    const [expiredRes, upcomingRes] = await Promise.all([
-      db.collection('items').where({ expiryDate: _.lt(todayStr) }).limit(500).get(),
-      db.collection('items').where({ expiryDate: _.gte(todayStr) }).limit(500).get()
+    // 1. 拉取用户静音配置、成员关系、队伍名称与全部物品
+    const [users, members, teams, items] = await Promise.all([
+      fetchAll('users'),
+      fetchAll('teamMembers'),
+      fetchAll('teams'),
+      fetchAll('items')
     ])
 
-    const allItems = [...(expiredRes.data || []), ...(upcomingRes.data || [])]
-
-    // 3. 按绑定关系分发物品到对应用户
-    // 个人物品：按 _openid 分发
-    // 队伍物品：分发给绑定了该队伍的所有用户
-    const teamBindings = {} // teamId -> [openid, ...]
+    const mutedMap = {} // openid -> Set(静音目标)
     for (const user of users) {
-      if (user.boundGroupId) {
-        if (!teamBindings[user.boundGroupId]) {
-          teamBindings[user.boundGroupId] = []
-        }
-        teamBindings[user.boundGroupId].push(user.openid)
-      }
+      const muted = Array.isArray(user.mutedGroups) ? user.mutedGroups : []
+      mutedMap[user.openid] = new Set(muted)
     }
 
-    for (const item of allItems) {
+    const teamMemberMap = {} // teamId -> Set(openid)
+    for (const m of members) {
+      if (!teamMemberMap[m.teamId]) teamMemberMap[m.teamId] = new Set()
+      teamMemberMap[m.teamId].add(m.openid)
+    }
+
+    const teamNameMap = {} // teamId -> 队伍名
+    for (const t of teams) {
+      teamNameMap[t.teamId] = t.name
+    }
+
+    // 2. 按订阅集合分发临期物品：openid -> { all: [], bySource: { 目标 -> [物品] } }
+    const notifyMap = {}
+    const ensurePack = (openid) => {
+      if (!notifyMap[openid]) notifyMap[openid] = { all: [], bySource: {} }
+      return notifyMap[openid]
+    }
+
+    for (const item of items) {
       // 已省钱物品不再提醒
       if (item.saved) continue
 
@@ -205,31 +197,32 @@ exports.main = async (event, context) => {
       const groupId = item.groupId || null
 
       if (groupId) {
-        // 队伍物品：通知绑定了该队伍的所有用户
-        const openids = teamBindings[groupId] || []
-        for (const openid of openids) {
-          if (userNotifyMap[openid]) {
-            userNotifyMap[openid].items.push(itemWithDays)
-          }
+        // 队伍物品：推给订阅了该队伍的所有成员（成员且未静音该队伍）
+        const memberSet = teamMemberMap[groupId]
+        if (!memberSet) continue
+        for (const openid of memberSet) {
+          const mutedSet = mutedMap[openid]
+          if (mutedSet && mutedSet.has(groupId)) continue
+          const pack = ensurePack(openid)
+          pack.all.push(itemWithDays)
+          if (!pack.bySource[groupId]) pack.bySource[groupId] = []
+          pack.bySource[groupId].push(itemWithDays)
         }
       } else {
-        // 个人物品：只通知创建者（且绑定个人）
+        // 个人物品：推给创建者（未静音个人空间）
         const openid = item._openid || item.openid
-        if (openid && userNotifyMap[openid] && userNotifyMap[openid].boundType === 'personal') {
-          userNotifyMap[openid].items.push(itemWithDays)
-        } else if (openid && !userNotifyMap[openid]) {
-          // 用户没有 users 记录，默认个人视角
-          userNotifyMap[openid] = {
-            boundGroupId: null,
-            boundType: 'personal',
-            items: [itemWithDays]
-          }
-        }
+        if (!openid) continue
+        const mutedSet = mutedMap[openid]
+        if (mutedSet && mutedSet.has('personal')) continue
+        const pack = ensurePack(openid)
+        pack.all.push(itemWithDays)
+        if (!pack.bySource.personal) pack.bySource.personal = []
+        pack.bySource.personal.push(itemWithDays)
       }
     }
 
-    // 4. 查询已订阅的用户
-    const openids = Object.keys(userNotifyMap).filter(id => userNotifyMap[id].items.length > 0)
+    // 3. 查询已订阅的用户
+    const openids = Object.keys(notifyMap).filter(id => notifyMap[id].all.length > 0)
     if (openids.length === 0) {
       return { success: true, sent: 0, message: '没有需要通知的用户' }
     }
@@ -241,37 +234,42 @@ exports.main = async (event, context) => {
 
     const subscribedOpenids = new Set((subsRes.data || []).map(s => s.openid))
 
-    // 5. 发送订阅消息
+    // 4. 发送订阅消息（一条推送汇总所有订阅目标的临期数据）
     let sentCount = 0
     const errors = []
 
     for (const openid of openids) {
       if (!subscribedOpenids.has(openid)) continue
 
-      const userItems = userNotifyMap[openid].items
-      if (!userItems || userItems.length === 0) continue
+      const pack = notifyMap[openid]
+      if (!pack.all || pack.all.length === 0) continue
 
       // 按到期日期排序，取最紧急的物品
-      userItems.sort((a, b) => a.daysRemaining - b.daysRemaining)
-      const mostUrgent = userItems[0]
+      pack.all.sort((a, b) => a.daysRemaining - b.daysRemaining)
+      const mostUrgent = pack.all[0]
 
-      // 构建提醒内容
-      let reminderText = ''
-      if (userItems.length === 1) {
-        reminderText = mostUrgent.daysRemaining < 0
-          ? `已过期${Math.abs(mostUrgent.daysRemaining)}天`
-          : mostUrgent.daysRemaining === 0
-            ? '今天到期'
-            : `还有${mostUrgent.daysRemaining}天到期`
-      } else {
-        const expiredCount = userItems.filter(i => i.daysRemaining < 0).length
-        const todayCount = userItems.filter(i => i.daysRemaining === 0).length
-        const upcomingCount = userItems.filter(i => i.daysRemaining > 0).length
-        const parts = []
-        if (expiredCount) parts.push(`${expiredCount}件已过期`)
-        if (todayCount) parts.push(`${todayCount}件今天到期`)
-        if (upcomingCount) parts.push(`${upcomingCount}件即将到期`)
-        reminderText = parts.join('，') + '，请及时处理'
+      // 状态统计 + 来源汇总（个人/各队伍分别计件）
+      const expiredCount = pack.all.filter(i => i.daysRemaining < 0).length
+      const todayCount = pack.all.filter(i => i.daysRemaining === 0).length
+      const upcomingCount = pack.all.length - expiredCount - todayCount
+
+      const statusParts = []
+      if (expiredCount) statusParts.push(`${expiredCount}件已过期`)
+      if (todayCount) statusParts.push(`${todayCount}件今天到期`)
+      if (upcomingCount) statusParts.push(`${upcomingCount}件即将到期`)
+
+      const sourceParts = []
+      for (const key of Object.keys(pack.bySource)) {
+        const count = pack.bySource[key].length
+        const label = key === 'personal' ? '个人' : (teamNameMap[key] || '队伍')
+        sourceParts.push(`${label}${count}件`)
+      }
+
+      let reminderText = statusParts.join('，')
+      if (sourceParts.length > 1) {
+        reminderText += `（${sourceParts.join('、')}）`
+      } else if (sourceParts.length === 1 && sourceParts[0] !== '个人1件') {
+        reminderText += `（${sourceParts[0]}）`
       }
 
       try {
@@ -373,6 +371,20 @@ async function testNotify() {
 }
 
 // --- 工具函数 ---
+
+// 分页拉取集合全量数据（临期判断需要全量物品；用户/成员/队伍规模可控）
+async function fetchAll(collection) {
+  const pageSize = 1000
+  let skip = 0
+  const list = []
+  while (true) {
+    const res = await db.collection(collection).skip(skip).limit(pageSize).get()
+    list.push(...(res.data || []))
+    if ((res.data || []).length < pageSize) break
+    skip += pageSize
+  }
+  return list
+}
 
 function formatDate(date) {
   const y = date.getFullYear()

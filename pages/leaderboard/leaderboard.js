@@ -36,16 +36,17 @@ Page({
   ...shareMixin,
   data: {
     loading: true,
-    // 跟随视角：个人视角 = 个人统计 + 全体个人排行；队伍视角 = 队伍统计 + 队内成员排行
+    // 跟随视角：等级/价值/统计按视角聚合；排行列表个人=全体个人，队伍=队内成员
     isTeamView: false,
     teamName: '',
     stats: {
       totalTracked: 0,
       totalSaved: 0,
+      totalSavedValue: 0,
       totalExpired: 0,
       percentile: 0,
       rank: 0,
-      totalUsers: 0
+      totalSubjects: 0
     },
     saveRate: 0,
     levelInfo: {},
@@ -83,17 +84,18 @@ Page({
       const stats = {
         totalTracked: data.totalTracked || 0,
         totalSaved: data.totalSaved || 0,
+        totalSavedValue: data.totalSavedValue || 0,
         totalExpired: data.totalExpired || 0,
         percentile: data.percentile || 0,
         rank: data.rank || 0,
-        totalUsers: data.totalUsers || 0
+        totalSubjects: data.totalSubjects || 0
       }
 
       // 守护率：避免过期 / (避免过期 + 已过期)
       const totalHandled = stats.totalSaved + stats.totalExpired
       const saveRate = totalHandled > 0 ? Math.round((stats.totalSaved / totalHandled) * 100) : 0
 
-      // 个人视角才有等级/徽章（队伍视角展示队内排行）
+      // 等级与徽章：等级跟随视角（队伍视角按队伍统计计算），徽章仅个人视角展示
       const levelInfo = this.calcLevel(stats.totalSaved)
       const levelProgress = this.calcLevelProgress(stats.totalSaved, levelInfo)
       const badges = this.calcBadges(stats)
@@ -116,7 +118,7 @@ Page({
     } catch (err) {
       console.error('加载成就数据失败:', err)
       // 降级：显示本地空数据
-      const stats = { totalTracked: 0, totalSaved: 0, totalExpired: 0, percentile: 0, rank: 0, totalUsers: 0 }
+      const stats = { totalTracked: 0, totalSaved: 0, totalSavedValue: 0, totalExpired: 0, percentile: 0, rank: 0, totalSubjects: 0 }
       const levelInfo = this.calcLevel(0)
       this.setData({
         isTeamView,
@@ -206,15 +208,16 @@ Page({
   // 分享
   onShareAppMessage() {
     const { stats, isTeamView } = this.data
+    const rivalWord = isTeamView ? '团队' : '用户'
     if (isTeamView) {
       return {
-        title: `我们队伍已避免${stats.totalSaved}件物品过期，一起守护物品吧！`,
+        title: `我们队伍已避免${stats.totalSaved}件物品过期，${stats.totalSubjects > 0 ? `超过全网${stats.percentile}%的团队！` : '一起守护物品吧！'}`,
         path: '/pages/leaderboard/leaderboard',
         imageUrl: ''
       }
     }
     return {
-      title: `我已成功避免了${stats.totalSaved}件物品过期，${stats.totalUsers > 0 ? `超过${stats.percentile}%的用户！` : '快来挑战我吧！'}`,
+      title: `我已成功避免了${stats.totalSaved}件物品过期，${stats.totalSubjects > 0 ? `超过全网${stats.percentile}%的${rivalWord}！` : '快来挑战我吧！'}`,
       path: '/pages/leaderboard/leaderboard',
       imageUrl: ''
     }
