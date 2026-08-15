@@ -84,10 +84,12 @@
         <text class="detail-label">成员（{{detailMembers.length}}人）</text>
         <view class="member-list">
           <view class="member-item" wx:for="{{detailMembers}}" wx:key="openid">
-            <text class="member-name">
-              {{item.isSelf ? '我' : '队员'}}
+            <image class="member-avatar" src="{{item.avatarUrl}}" mode="aspectFill" wx:if="{{item.avatarUrl}}"></image>
+            <view class="member-avatar member-avatar-default icon icon-user-dark" wx:else></view>
+            <view class="member-info">
+              <text class="member-name">{{item.nickName || (item.isSelf ? '我' : '队员')}}</text>
               <text class="member-badge" wx:if="{{item.isCreator}}">创建者</text>
-            </text>
+            </view>
           </view>
         </view>
       </view>

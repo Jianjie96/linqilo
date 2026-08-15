@@ -136,9 +136,9 @@ Page({
     })
   },
 
-  // 跳转设置页开启通知
+  // 跳转个人中心开启通知
   goSettingsForNotify() {
-    wx.navigateTo({ url: '/pages/settings/settings' })
+    wx.navigateTo({ url: '/pages/profile/profile' })
   },
 
   // 切换到拍照模式

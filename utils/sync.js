@@ -206,6 +206,16 @@ function refreshInviteCode(teamId) {
   return callCloud('teams', { action: 'refreshCode', teamId })
 }
 
+// --- 用户个人资料 ---
+
+function updateProfile(nickName, avatarUrl) {
+  return callCloud('teams', { action: 'updateProfile', nickName, avatarUrl })
+}
+
+function getUserProfile() {
+  return callCloud('teams', { action: 'getProfile' })
+}
+
 module.exports = {
   getOpenid,
   fetchAllItems,
@@ -229,5 +239,7 @@ module.exports = {
   updateView,
   getMyTeams,
   getTeamMembers,
-  refreshInviteCode
+  refreshInviteCode,
+  updateProfile,
+  getUserProfile
 }

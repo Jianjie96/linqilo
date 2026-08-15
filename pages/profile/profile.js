@@ -5,6 +5,11 @@ const shareMixin = require('../../utils/share.js')
 Page({
   ...shareMixin,
   data: {
+    // 用户资料
+    nickName: '',
+    avatarUrl: '',
+
+    // 设置
     totalItems: 0,
     isSubscribed: false,
     isSyncing: false,
@@ -17,6 +22,7 @@ Page({
   },
 
   onLoad() {
+    this.loadProfile()
     this.loadSettings()
     this.checkCloudStatus()
   },
@@ -25,7 +31,84 @@ Page({
     this.loadSettings()
     this.checkSubscriptionStatus()
     this._updateSubscribeSummary()
+    // 每次展示时刷新资料（可能从其他页面返回后头像/昵称已更新）
+    this.loadProfile()
   },
+
+  // --- 用户资料 ---
+
+  async loadProfile() {
+    try {
+      const result = await syncUtil.getUserProfile()
+      this.setData({
+        nickName: result.data.nickName || '',
+        avatarUrl: result.data.avatarUrl || ''
+      })
+    } catch (err) {
+      console.error('加载用户资料失败:', err)
+    }
+  },
+
+  // 选择头像
+  async onChooseAvatar(e) {
+    const { avatarUrl } = e.detail
+    if (!avatarUrl) return
+
+    wx.showLoading({ title: '上传中...' })
+    try {
+      // 上传到云存储
+      const cloudPath = `avatars/${app.globalData.openid}_${Date.now()}.png`
+      const uploadRes = await wx.cloud.uploadFile({
+        cloudPath,
+        filePath: avatarUrl
+      })
+
+      // 保存 cloud fileID 到用户资料
+      await syncUtil.updateProfile(undefined, uploadRes.fileID)
+      wx.hideLoading()
+
+      // 获取临时链接用于展示
+      const tempRes = await wx.cloud.getTempFileURL({ fileList: [uploadRes.fileID] })
+      this.setData({
+        avatarUrl: tempRes.fileList[0].tempFileURL
+      })
+
+      wx.showToast({ title: '头像已更新', icon: 'success' })
+    } catch (err) {
+      wx.hideLoading()
+      console.error('上传头像失败:', err)
+      wx.showToast({ title: '上传失败，请重试', icon: 'none' })
+    }
+  },
+
+  // 昵称输入失焦时保存
+  onNicknameBlur(e) {
+    const nickName = (e.detail.value || '').trim()
+    if (nickName && nickName !== this.data.nickName) {
+      this.saveNickname(nickName)
+    }
+  },
+
+  // 昵称输入确认时保存
+  onNicknameConfirm(e) {
+    const nickName = (e.detail.value || '').trim()
+    if (nickName && nickName !== this.data.nickName) {
+      this.saveNickname(nickName)
+    }
+  },
+
+  async saveNickname(nickName) {
+    try {
+      await syncUtil.updateProfile(nickName, undefined)
+      this.setData({ nickName })
+      wx.showToast({ title: '昵称已更新', icon: 'success' })
+    } catch (err) {
+      console.error('保存昵称失败:', err)
+      wx.showToast({ title: '保存失败', icon: 'none' })
+    }
+  },
+
+  // --- 设置（从旧 settings 页迁移） ---
 
   loadSettings() {
     this.setData({
@@ -34,7 +117,6 @@ Page({
     this._updateSubscribeSummary()
   },
 
-  // 推送订阅摘要：未静音的订阅目标数（个人 + 队伍）
   _updateSubscribeSummary() {
     const { mutedGroups, teams } = app.globalData
     const muted = Array.isArray(mutedGroups) ? mutedGroups : []
@@ -46,17 +128,14 @@ Page({
     })
   },
 
-  // 跳转队伍管理
   goTeam() {
     wx.navigateTo({ url: '/pages/team/team' })
   },
 
-  // 跳转帮助
   goHelp() {
     wx.navigateTo({ url: '/pages/help/help' })
   },
 
-  // 检查云开发状态
   checkCloudStatus() {
     this.setData({ cloudEnabled: !!wx.cloud })
     if (wx.cloud) {
@@ -64,7 +143,6 @@ Page({
     }
   },
 
-  // 查询订阅状态
   async checkSubscriptionStatus() {
     const openid = app.globalData.openid
     if (!openid || !wx.cloud) return
@@ -77,16 +155,14 @@ Page({
     }
   },
 
-  // 开启临期通知
   async subscribeNotification() {
     if (!wx.cloud) {
       wx.showToast({ title: '云开发未启用', icon: 'none' })
       return
     }
 
-    // 调用微信订阅消息授权
     wx.requestSubscribeMessage({
-      tmplIds: ['68FxhLOgJgDwUZWFOZFunglKqFWCsHPq3vSwsKI9YPY'], // 替换为你的模板 ID
+      tmplIds: ['68FxhLOgJgDwUZWFOZFunglKqFWCsHPq3vSwsKI9YPY'],
       success: async (res) => {
         console.log('订阅授权结果:', res)
         const openid = app.globalData.openid
@@ -95,7 +171,6 @@ Page({
           return
         }
 
-        // 无论用户是否授权，都记录订阅状态
         await syncUtil.updateSubscription(openid, true)
         this.setData({ isSubscribed: true })
 
@@ -108,7 +183,6 @@ Page({
     })
   },
 
-  // 关闭临期通知
   async unsubscribeNotification() {
     const openid = app.globalData.openid
     if (!openid) return
@@ -126,7 +200,6 @@ Page({
     })
   },
 
-  // 手动同步：从云端拉取最新数据
   async manualSync() {
     this.setData({ isSyncing: true })
     wx.showLoading({ title: '同步中...' })
@@ -143,7 +216,6 @@ Page({
     }
   },
 
-  // 清除所有数据（从云端逐条删除）
   clearAllData() {
     wx.showModal({
       title: '清除所有数据',
@@ -169,7 +241,6 @@ Page({
     })
   },
 
-  // 导出数据
   exportData() {
     const items = app.globalData.items
     if (items.length === 0) {
@@ -189,11 +260,10 @@ Page({
     })
   },
 
-  // 格式化为可读文本并分享为文件
   shareAsFile(items) {
     const now = new Date()
     const dateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
-    
+
     let text = `叮咚到期 · 数据导出\n`
     text += `导出时间：${dateStr}\n`
     text += `共 ${items.length} 条记录\n`
@@ -223,7 +293,6 @@ Page({
     const fs = wx.getFileSystemManager()
     const filePath = `${wx.env.USER_DATA_PATH}/dingdong-export-${dateStr}.txt`
 
-    // 同步写入文件，保证 shareFileMessage 在用户点击的调用栈内触发
     try {
       fs.writeFileSync(filePath, text, 'utf8')
     } catch (err) {
@@ -240,14 +309,12 @@ Page({
       },
       fail: (err) => {
         console.error('分享文件失败:', err)
-        // 用户主动取消分享不算失败
         if (err.errMsg && err.errMsg.includes('cancel')) return
         wx.showToast({ title: '分享失败，请重试', icon: 'none' })
       }
     })
   },
 
-  // 复制为 JSON（备用方案）
   copyAsJSON(items) {
     const text = JSON.stringify(items, null, 2)
     wx.setClipboardData({
@@ -258,7 +325,6 @@ Page({
     })
   },
 
-  // 关于
   showAbout() {
     wx.showModal({
       title: '关于',

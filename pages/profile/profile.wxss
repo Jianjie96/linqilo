@@ -1,8 +1,86 @@
+.container {
+  padding: 20rpx 30rpx;
+  background: #F5F5F5;
+  min-height: 100vh;
+}
+
+/* 用户信息 */
+.profile-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 50rpx 0 40rpx;
+  background: #fff;
+  border-radius: 16rpx;
+  margin-bottom: 20rpx;
+  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.04);
+}
+
+.avatar-btn {
+  position: relative;
+  width: 140rpx;
+  height: 140rpx;
+  padding: 0;
+  margin: 0;
+  background: transparent;
+  border: none;
+  line-height: 1;
+}
+
+.avatar-btn::after {
+  border: none;
+}
+
+.profile-avatar {
+  width: 140rpx;
+  height: 140rpx;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.profile-avatar-default {
+  background-color: #F0F0F0;
+  background-size: 72rpx 72rpx;
+}
+
+.avatar-edit-icon {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 40rpx;
+  height: 40rpx;
+  background-color: #fff;
+  border-radius: 50%;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.1);
+}
+
+.profile-name-wrap {
+  margin-top: 24rpx;
+}
+
+.profile-name {
+  font-size: 34rpx;
+  font-weight: 600;
+  color: #333;
+  text-align: center;
+  min-width: 200rpx;
+  height: 56rpx;
+  line-height: 56rpx;
+}
+
+/* 设置区域 */
 .section-title {
   font-size: 26rpx;
   color: #999;
   margin: 30rpx 10rpx 16rpx;
   font-weight: 500;
+}
+
+.card {
+  background: #fff;
+  border-radius: 16rpx;
+  padding: 28rpx 32rpx;
+  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.04);
 }
 
 .settings-desc {

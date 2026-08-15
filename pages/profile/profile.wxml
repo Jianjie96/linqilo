@@ -1,4 +1,23 @@
 <view class="container">
+  <!-- 用户信息 -->
+  <view class="profile-header">
+    <button class="avatar-btn" open-type="chooseAvatar" bindchooseavatar="onChooseAvatar">
+      <image class="profile-avatar" src="{{avatarUrl}}" mode="aspectFill" wx:if="{{avatarUrl}}"></image>
+      <view class="profile-avatar profile-avatar-default icon icon-user-dark" wx:else></view>
+      <view class="avatar-edit-icon icon icon-camera-gray"></view>
+    </button>
+    <view class="profile-name-wrap">
+      <input
+        class="profile-name"
+        type="nickname"
+        value="{{nickName}}"
+        placeholder="点击设置昵称"
+        bindblur="onNicknameBlur"
+        bindconfirm="onNicknameConfirm"
+      />
+    </view>
+  </view>
+
   <!-- 消息通知 -->
   <view class="section-title">临期消息通知</view>
   <view class="card">

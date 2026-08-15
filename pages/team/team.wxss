@@ -277,12 +277,33 @@
 }
 
 .member-item {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
   padding: 16rpx 0;
   border-bottom: 1rpx solid #F0F0F0;
 }
 
 .member-item:last-child {
   border-bottom: none;
+}
+
+.member-avatar {
+  width: 64rpx;
+  height: 64rpx;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.member-avatar-default {
+  background-color: #F0F0F0;
+  background-size: 36rpx 36rpx;
+}
+
+.member-info {
+  display: flex;
+  align-items: center;
+  flex: 1;
 }
 
 .member-name {

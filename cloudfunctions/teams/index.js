@@ -41,6 +41,10 @@ exports.main = async (event, context) => {
         return await getTeamMembers(openid, event.teamId)
       case 'refreshCode':
         return await refreshInviteCode(openid, event.teamId)
+      case 'updateProfile':
+        return await updateProfile(openid, event.nickName, event.avatarUrl)
+      case 'getProfile':
+        return await getProfile(openid)
       default:
         return { code: -1, msg: '未知操作: ' + action }
     }
@@ -482,17 +486,35 @@ async function getTeamMembers(openid, teamId) {
 
   const team = teamRes.data.length > 0 ? teamRes.data[0] : null
 
+  // 批量获取成员的用户资料（昵称、头像）
+  const memberOpenids = membersRes.data.map(m => m.openid)
+  const userProfileMap = {}
+  if (memberOpenids.length > 0) {
+    const userRes = await db.collection(COLLECTIONS.USERS)
+      .where({ openid: _.in(memberOpenids) })
+      .field({ openid: true, nickName: true, avatarUrl: true })
+      .get()
+    userRes.data.forEach(u => {
+      userProfileMap[u.openid] = { nickName: u.nickName || '', avatarUrl: u.avatarUrl || '' }
+    })
+  }
+
   return {
     code: 0,
     data: {
       teamName: team?.name || '',
       inviteCode: team?.inviteCode || '',
-      members: membersRes.data.map(m => ({
-        openid: m.openid,
-        joinedAt: m.joinedAt,
-        isSelf: m.openid === openid,
-        isCreator: m.openid === team?.creatorOpenid
-      }))
+      members: membersRes.data.map(m => {
+        const profile = userProfileMap[m.openid] || {}
+        return {
+          openid: m.openid,
+          joinedAt: m.joinedAt,
+          nickName: profile.nickName || '',
+          avatarUrl: profile.avatarUrl || '',
+          isSelf: m.openid === openid,
+          isCreator: m.openid === team?.creatorOpenid
+        }
+      })
     }
   }
 }
@@ -581,6 +603,72 @@ async function ensureTeamStats(teamId) {
       updatedAt: new Date().toISOString()
     }
   })
+}
+
+// --- 用户个人资料 ---
+
+/**
+ * 更新用户昵称和头像
+ */
+async function updateProfile(openid, nickName, avatarUrl) {
+  const updates = { updatedAt: new Date().toISOString() }
+  if (nickName !== undefined && nickName !== null) updates.nickName = nickName
+  if (avatarUrl !== undefined && avatarUrl !== null) updates.avatarUrl = avatarUrl
+
+  const existing = await db.collection(COLLECTIONS.USERS)
+    .where({ openid })
+    .get()
+
+  if (existing.data.length > 0) {
+    await db.collection(COLLECTIONS.USERS)
+      .doc(existing.data[0]._id)
+      .update({ data: updates })
+  } else {
+    await db.collection(COLLECTIONS.USERS).add({
+      data: {
+        openid,
+        ...updates,
+        teamIds: [],
+        viewGroupId: null,
+        mutedGroups: []
+      }
+    })
+  }
+
+  return { code: 0, data: { nickName, avatarUrl } }
+}
+
+/**
+ * 获取用户个人资料
+ */
+async function getProfile(openid) {
+  const existing = await db.collection(COLLECTIONS.USERS)
+    .where({ openid })
+    .field({ nickName: true, avatarUrl: true })
+    .get()
+
+  const user = existing.data.length > 0 ? existing.data[0] : {}
+
+  // 如果 avatarUrl 是 cloud:// 格式，转换为临时链接
+  let avatarUrl = user.avatarUrl || ''
+  if (avatarUrl && avatarUrl.startsWith('cloud://')) {
+    try {
+      const tempRes = await cloud.getTempFileURL({ fileList: [avatarUrl] })
+      if (tempRes.fileList && tempRes.fileList[0] && tempRes.fileList[0].tempFileURL) {
+        avatarUrl = tempRes.fileList[0].tempFileURL
+      }
+    } catch (e) {
+      // 转换失败，保留原值
+    }
+  }
+
+  return {
+    code: 0,
+    data: {
+      nickName: user.nickName || '',
+      avatarUrl
+    }
+  }
 }
 
 /**

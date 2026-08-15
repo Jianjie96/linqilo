@@ -397,9 +397,9 @@ Page({
     wx.navigateTo({ url: '/pages/team/team' })
   },
 
-  // 跳转设置
+  // 跳转个人中心
   goSettings() {
-    wx.navigateTo({ url: '/pages/settings/settings' })
+    wx.navigateTo({ url: '/pages/profile/profile' })
   },
 
   // 跳转详情

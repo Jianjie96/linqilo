@@ -5,7 +5,7 @@
     "pages/add/add",
     "pages/detail/detail",
     "pages/leaderboard/leaderboard",
-    "pages/settings/settings",
+    "pages/profile/profile",
     "pages/team/team",
     "pages/help/help"
   ],

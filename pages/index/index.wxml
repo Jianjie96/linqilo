@@ -245,7 +245,7 @@
     </button>
     <view class="settings-entry" bindtap="goSettings">
       <view class="settings-icon icon icon-gear-gray"></view>
-      <text class="settings-label">设置</text>
+      <text class="settings-label">我的</text>
     </view>
   </view>
 </view>
