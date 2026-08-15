@@ -100,15 +100,22 @@
       </view>
     </block>
 
-    <!-- 排行列表（跟随视角：个人排行 / 队内排行） -->
+    <!-- 排行列表（跟随视角：个人=全网混合池，队伍=队内/全网队伍排行） -->
     <view class="section">
       <view class="sec-head">
-        <text class="sec-title">{{isTeamView ? '队内排行' : '个人排行'}}</text>
-        <text class="sec-sub">{{isTeamView ? '按队内贡献排序' : '按全网成就排序'}}</text>
+        <text class="sec-title">{{isTeamView ? (rankScope === 'global' ? '全网排行' : '队内排行') : '全网排行'}}</text>
+        <text class="sec-sub">{{isTeamView ? (rankScope === 'global' ? '队伍与队伍同台竞技' : '按队内贡献排序') : '用户与队伍同台竞技'}}</text>
       </view>
+
+      <!-- 队伍视角：队内/全网 tab 切换 -->
+      <view class="rank-tabs" wx:if="{{isTeamView}}">
+        <view class="rank-tab {{rankScope === 'internal' ? 'active' : ''}}" data-scope="internal" bindtap="onSwitchRankScope">队内排行</view>
+        <view class="rank-tab {{rankScope === 'global' ? 'active' : ''}}" data-scope="global" bindtap="onSwitchRankScope">全网排行</view>
+      </view>
+
       <view class="tr-empty" wx:if="{{ranking.length === 0}}">
-        <text>{{isTeamView ? '暂无成员贡献' : '暂无个人成就'}}</text>
-        <text class="tr-empty-sub">{{isTeamView ? '在队伍中记录物品后即可上榜' : '记录并守护物品后即可上榜'}}</text>
+        <text>{{isTeamView && rankScope === 'internal' ? '暂无成员贡献' : '暂无排行数据'}}</text>
+        <text class="tr-empty-sub">{{isTeamView && rankScope === 'internal' ? '在队伍中记录物品后即可上榜' : '记录并守护物品后即可上榜'}}</text>
       </view>
       <view
         class="tr-item {{item.isMine ? 'is-mine' : ''}}"
@@ -118,8 +125,9 @@
         <view class="tr-rank {{item.rank <= 3 ? 'top3' : ''}}">#{{item.rank}}</view>
         <view class="tr-main">
           <view class="tr-name-row">
+            <text class="tr-type {{item.type === 'team' ? 'is-team' : ''}}">{{item.type === 'team' ? '队伍' : '用户'}}</text>
             <text class="tr-name">{{item.name}}</text>
-            <text class="tr-mine" wx:if="{{item.isMine}}">我的</text>
+            <text class="tr-mine" wx:if="{{item.isMine}}">{{isTeamView ? '我的队伍' : '我的'}}</text>
           </view>
           <text class="tr-sub">{{item.totalSaved}} 件避免过期 · 追踪 {{item.totalTracked}} 件</text>
         </view>
@@ -128,6 +136,30 @@
           <text class="tr-label">已省下</text>
         </view>
       </view>
+
+      <!-- 自身/本队伍不在 top10：分隔线 + 名次展示 -->
+      <block wx:if="{{myEntry}}">
+        <view class="tr-divider">
+          <view class="tr-divider-line"></view>
+          <text class="tr-divider-text">我的名次</text>
+          <view class="tr-divider-line"></view>
+        </view>
+        <view class="tr-item is-mine">
+          <view class="tr-rank top3">#{{myEntry.rank}}</view>
+          <view class="tr-main">
+            <view class="tr-name-row">
+              <text class="tr-type {{myEntry.type === 'team' ? 'is-team' : ''}}">{{myEntry.type === 'team' ? '队伍' : '用户'}}</text>
+              <text class="tr-name">{{myEntry.name}}</text>
+              <text class="tr-mine">{{isTeamView ? '我的队伍' : '我的'}}</text>
+            </view>
+            <text class="tr-sub">{{myEntry.totalSaved}} 件避免过期 · 追踪 {{myEntry.totalTracked}} 件</text>
+          </view>
+          <view class="tr-value">
+            <text class="tr-num">¥{{myEntry.totalSavedValue}}</text>
+            <text class="tr-label">已省下</text>
+          </view>
+        </view>
+      </block>
     </view>
 
     <!-- 分享（个人视角） -->

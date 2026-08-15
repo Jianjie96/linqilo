@@ -36,9 +36,11 @@ Page({
   ...shareMixin,
   data: {
     loading: true,
-    // 跟随视角：等级/价值/统计按视角聚合；排行列表个人=全体个人，队伍=队内成员
+    // 跟随视角：等级/价值/统计按视角聚合；排行列表个人=全网混合池，队伍=队内/全网队伍排行
     isTeamView: false,
     teamName: '',
+    // 队伍视角排行 tab：internal = 队内排行，global = 全网队伍排行
+    rankScope: 'internal',
     stats: {
       totalTracked: 0,
       totalSaved: 0,
@@ -54,7 +56,8 @@ Page({
     badges: [],
     earnedBadges: 0,
     encourageText: '',
-    ranking: []
+    ranking: [],
+    myEntry: null
   },
 
   _lastTeamId: null,
@@ -67,19 +70,21 @@ Page({
     // 视角可能已在首页切换（或从队伍页更换绑定），按当前视角刷新
     const teamId = app.getViewGroupId()
     if (this._lastTeamId !== teamId) {
+      this.setData({ rankScope: 'internal' })
       this.loadStats(teamId)
     }
   },
 
-  async loadStats(teamId) {
+  async loadStats(teamId, silent = false) {
     if (teamId === undefined) teamId = app.getViewGroupId()
     this._lastTeamId = teamId
-    this.setData({ loading: true })
+    if (!silent) this.setData({ loading: true })
 
     const isTeamView = !!teamId
+    const scope = isTeamView ? this.data.rankScope : undefined
 
     try {
-      const result = await syncUtil.getLeaderboardStats(teamId)
+      const result = await syncUtil.getLeaderboardStats(teamId, scope)
       const data = result.data || {}
       const stats = {
         totalTracked: data.totalTracked || 0,
@@ -113,10 +118,15 @@ Page({
         earnedBadges,
         encourageText,
         ranking: data.ranking || [],
+        myEntry: data.myEntry || null,
         loading: false
       })
     } catch (err) {
       console.error('加载成就数据失败:', err)
+      if (silent) {
+        this.setData({ ranking: [], myEntry: null })
+        return
+      }
       // 降级：显示本地空数据
       const stats = { totalTracked: 0, totalSaved: 0, totalSavedValue: 0, totalExpired: 0, percentile: 0, rank: 0, totalSubjects: 0 }
       const levelInfo = this.calcLevel(0)
@@ -131,9 +141,18 @@ Page({
         earnedBadges: 0,
         encourageText: ENCOURAGES.zero,
         ranking: [],
+        myEntry: null,
         loading: false
       })
     }
+  },
+
+  // 队伍视角：切换队内/全网排行 tab（仅刷新排行列表，不整页 loading）
+  onSwitchRankScope(e) {
+    const scope = e.currentTarget.dataset.scope
+    if (scope === this.data.rankScope) return
+    this.setData({ rankScope: scope })
+    this.loadStats(app.getViewGroupId(), true)
   },
 
   // 查找视角对应的队伍名称

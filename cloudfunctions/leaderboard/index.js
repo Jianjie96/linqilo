@@ -32,7 +32,8 @@ const COLLECTIONS = {
   USER_STATS: 'user_stats',
   TEAM_STATS: 'team_stats',
   EVENTS: 'stat_events',
-  MEMBERS: 'teamMembers'
+  MEMBERS: 'teamMembers',
+  TEAMS: 'teams'
 }
 
 const PERSONAL = 'personal'
@@ -51,7 +52,7 @@ exports.main = async (event, context) => {
       case 'recordExpired':
         return await recordExpired(openid, event.teamId, event.itemId)
       case 'getStats':
-        return await getStats(openid, event.teamId)
+        return await getStats(openid, event.teamId, event.scope)
       default:
         return { code: -1, msg: '未知操作: ' + action }
     }
@@ -193,7 +194,7 @@ async function recordExpired(openid, teamId, itemId) {
 }
 
 // 获取指定视角统计 + 排行列表（跟随视角）
-async function getStats(openid, teamId) {
+async function getStats(openid, teamId, scope) {
   const t = resolveTeamId(teamId)
   if (t === PERSONAL) {
     return getPersonalStats(openid)
@@ -201,31 +202,18 @@ async function getStats(openid, teamId) {
   if (!(await isTeamMember(openid, t))) {
     return { code: -1, msg: '你不是该队伍的成员' }
   }
-  return getTeamStats(t, openid)
+  return getTeamStats(t, openid, scope || 'internal')
 }
 
-// 个人视角：个人统计 + 混合池百分位/排名 + 全体个人排行
+// 个人视角：个人统计 + 混合池百分位/排名 + 混合池全网排行（top10 + 自身）
 async function getPersonalStats(openid) {
   const stats = await getOrCreatePersonalStats(openid)
 
   // 百分位与排名：混合池（所有个人 + 所有队伍），「超过全网 xx%」统一口径
   const mixed = await computeMixedPercentile(stats.totalSavedValue || 0)
 
-  // 全体个人排行列表
-  const rankingRes = await db.collection(COLLECTIONS.USER_STATS)
-    .orderBy('totalSavedValue', 'desc')
-    .orderBy('totalSaved', 'desc')
-    .limit(RANKING_LIMIT)
-    .get()
-  const ranking = rankingRes.data.map((u, i) => ({
-    rank: i + 1,
-    name: u._openid === openid ? '我' : '用户' + u._openid.slice(-4),
-    totalTracked: u.totalTracked || 0,
-    totalSaved: u.totalSaved || 0,
-    totalSavedValue: u.totalSavedValue || 0,
-    totalExpired: u.totalExpired || 0,
-    isMine: u._openid === openid
-  }))
+  // 混合池排行：全网 top10（用户+队伍混合），若自身不在 top10 则追加
+  const rankingData = await getMixedPoolRanking(openid, stats.totalSavedValue || 0)
 
   return {
     code: 0,
@@ -238,20 +226,34 @@ async function getPersonalStats(openid) {
       percentile: mixed.percentile,
       rank: mixed.rank,
       totalSubjects: mixed.totalSubjects,
-      ranking
+      ranking: rankingData.ranking,
+      myRank: rankingData.myRank,
+      myEntry: rankingData.myEntry
     }
   }
 }
 
-// 队伍视角：队伍统计 + 混合池百分位/排名 + 队内成员贡献排行
-async function getTeamStats(teamId, openid) {
+// 队伍视角：队伍统计 + 混合池百分位/排名 + 队内排行（internal）/ 全网队伍排行（global）
+async function getTeamStats(teamId, openid, scope) {
   const stats = await getOrCreateTeamStats(teamId)
 
   // 百分位与排名：混合池（所有个人 + 所有队伍），队伍与个人同台竞技
   const mixed = await computeMixedPercentile(stats.totalSavedValue || 0)
 
-  // 队内成员贡献排行：账本按成员聚合
-  const ranking = await getTeamMemberRanking(teamId, openid)
+  let ranking = []
+  let myRank = 0
+  let myEntry = null
+
+  if (scope === 'global') {
+    // 全网队伍排行：全部队伍按价值排序，top10 + 本队伍不在 top10 时追加
+    const rankingData = await getGlobalTeamRanking(teamId, stats.totalSavedValue || 0)
+    ranking = rankingData.ranking
+    myRank = rankingData.myRank
+    myEntry = rankingData.myEntry
+  } else {
+    // 队内成员贡献排行：账本按成员聚合
+    ranking = await getTeamMemberRanking(teamId, openid)
+  }
 
   return {
     code: 0,
@@ -265,9 +267,155 @@ async function getTeamStats(teamId, openid) {
       percentile: mixed.percentile,
       rank: mixed.rank,
       totalSubjects: mixed.totalSubjects,
-      ranking
+      ranking,
+      myRank,
+      myEntry
     }
   }
+}
+
+// 混合池全网排行：用户与队伍同台竞技
+// 返回 top10 列表；若本人（openid）不在 top10，则追加本人条目
+async function getMixedPoolRanking(openid, myValue) {
+  const TOP_N = 10
+
+  // 取用户池 top N 与队伍池 top N，合并排序后截取 top N（保证混合后前 N 名正确）
+  const [usersRes, teamsRes] = await Promise.all([
+    db.collection(COLLECTIONS.USER_STATS)
+      .orderBy('totalSavedValue', 'desc')
+      .orderBy('totalSaved', 'desc')
+      .limit(TOP_N)
+      .get(),
+    db.collection(COLLECTIONS.TEAM_STATS)
+      .orderBy('totalSavedValue', 'desc')
+      .orderBy('totalSaved', 'desc')
+      .limit(TOP_N)
+      .get()
+  ])
+
+  const teamIds = teamsRes.data.map(t => t.teamId)
+  const teamNameMap = await getTeamNameMap(teamIds)
+
+  const userEntries = usersRes.data.map(u => ({
+    type: 'user',
+    name: u._openid === openid ? '我' : '用户' + u._openid.slice(-4),
+    totalTracked: u.totalTracked || 0,
+    totalSaved: u.totalSaved || 0,
+    totalSavedValue: u.totalSavedValue || 0,
+    isMine: u._openid === openid
+  }))
+  const teamEntries = teamsRes.data.map(t => ({
+    type: 'team',
+    name: teamNameMap[t.teamId] || '队伍' + t.teamId.slice(-4),
+    totalTracked: t.totalTracked || 0,
+    totalSaved: t.totalSaved || 0,
+    totalSavedValue: t.totalSavedValue || 0,
+    isMine: false
+  }))
+
+  const merged = [...userEntries, ...teamEntries].sort((a, b) => {
+    const diff = (b.totalSavedValue || 0) - (a.totalSavedValue || 0)
+    if (diff !== 0) return diff
+    return (b.totalSaved || 0) - (a.totalSaved || 0)
+  })
+  const top10 = merged.slice(0, TOP_N).map((e, i) => ({ ...e, rank: i + 1 }))
+
+  // 本人是否已在 top10 中
+  if (top10.some(e => e.isMine)) {
+    return { ranking: top10, myRank: top10.find(e => e.isMine).rank, myEntry: null }
+  }
+
+  // 本人不在 top10：计算其在混合池中的真实名次并追加
+  const myRank = await computeMixedRank(myValue)
+  const myEntry = {
+    type: 'user',
+    name: '我',
+    totalTracked: 0,
+    totalSaved: 0,
+    totalSavedValue: myValue,
+    isMine: true,
+    rank: myRank
+  }
+  // 从个人统计中补齐追踪/避免数据
+  const myStats = await getOrCreatePersonalStats(openid)
+  myEntry.totalTracked = myStats.totalTracked || 0
+  myEntry.totalSaved = myStats.totalSaved || 0
+
+  return { ranking: top10, myRank, myEntry }
+}
+
+// 全网队伍排行：全部队伍按价值排序
+// 返回 top10 列表；若当前队伍不在 top10，则追加当前队伍条目
+async function getGlobalTeamRanking(teamId, myValue) {
+  const TOP_N = 10
+
+  const teamsRes = await db.collection(COLLECTIONS.TEAM_STATS)
+    .orderBy('totalSavedValue', 'desc')
+    .orderBy('totalSaved', 'desc')
+    .limit(TOP_N)
+    .get()
+
+  const teamIds = teamsRes.data.map(t => t.teamId)
+  // 当前队伍可能不在 top10 列表中，需一并查询名称
+  const lookupIds = teamIds.includes(teamId) ? teamIds : teamIds.concat(teamId)
+  const teamNameMap = await getTeamNameMap(lookupIds)
+
+  const top10 = teamsRes.data.map((t, i) => ({
+    type: 'team',
+    name: teamNameMap[t.teamId] || '队伍' + t.teamId.slice(-4),
+    totalTracked: t.totalTracked || 0,
+    totalSaved: t.totalSaved || 0,
+    totalSavedValue: t.totalSavedValue || 0,
+    isMine: t.teamId === teamId,
+    rank: i + 1
+  }))
+
+  // 当前队伍已在 top10 中
+  const mineInTop = top10.find(e => e.isMine)
+  if (mineInTop) {
+    return { ranking: top10, myRank: mineInTop.rank, myEntry: null }
+  }
+
+  // 当前队伍不在 top10：计算真实名次并追加
+  const myRank = await computeMixedRank(myValue)
+  const myEntry = {
+    type: 'team',
+    name: teamNameMap[teamId] || '我的队伍',
+    totalTracked: 0,
+    totalSaved: 0,
+    totalSavedValue: myValue,
+    isMine: true,
+    rank: myRank
+  }
+  // 从队伍统计中补齐数据
+  const myStats = await getOrCreateTeamStats(teamId)
+  myEntry.totalTracked = myStats.totalTracked || 0
+  myEntry.totalSaved = myStats.totalSaved || 0
+
+  return { ranking: top10, myRank, myEntry }
+}
+
+// 计算某个价值在混合池（所有个人 + 所有队伍）中的名次（1-based）
+async function computeMixedRank(value) {
+  const [userBelow, teamBelow] = await Promise.all([
+    db.collection(COLLECTIONS.USER_STATS).where({ totalSavedValue: _.gt(value) }).count(),
+    db.collection(COLLECTIONS.TEAM_STATS).where({ totalSavedValue: _.gt(value) }).count()
+  ])
+  return userBelow.total + teamBelow.total + 1
+}
+
+// 批量获取队伍名称映射
+async function getTeamNameMap(teamIds) {
+  const map = {}
+  if (teamIds.length === 0) return map
+
+  const res = await db.collection(COLLECTIONS.TEAMS)
+    .where({ teamId: _.in(teamIds) })
+    .get()
+  res.data.forEach(t => {
+    map[t.teamId] = t.name || ''
+  })
+  return map
 }
 
 // 混合池百分位/排名：「超过全网 xx%」统计所有个人和队伍的数据情况再排名

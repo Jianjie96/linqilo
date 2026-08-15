@@ -110,8 +110,9 @@ function recordExpired(teamId, itemId) {
 }
 
 // 获取当前视角的统计 + 排行列表（等级/价值跟视角；「超过全网」混合池：所有个人与队伍同台排名）
-function getLeaderboardStats(teamId) {
-  return callCloud('leaderboard', { action: 'getStats', teamId })
+// scope：队伍视角专用，'internal' = 队内排行（默认），'global' = 全网队伍排行
+function getLeaderboardStats(teamId, scope) {
+  return callCloud('leaderboard', { action: 'getStats', teamId, scope })
 }
 
 // --- 订阅管理（保留直连数据库，频率低不影响调试） ---

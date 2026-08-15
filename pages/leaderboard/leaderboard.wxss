@@ -375,6 +375,31 @@
 }
 
 /* ── 排行列表 ── */
+.rank-tabs {
+  display: flex;
+  background: #EDEDED;
+  border-radius: 100rpx;
+  padding: 6rpx;
+  margin-bottom: 28rpx;
+}
+
+.rank-tab {
+  flex: 1;
+  text-align: center;
+  padding: 14rpx 0;
+  font-size: 26rpx;
+  color: #999;
+  border-radius: 100rpx;
+  transition: all 0.2s ease;
+}
+
+.rank-tab.active {
+  background: #fff;
+  color: #07C160;
+  font-weight: 600;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.06);
+}
+
 .tr-empty {
   padding: 160rpx 0;
   text-align: center;
@@ -433,6 +458,22 @@
   gap: 12rpx;
 }
 
+/* 条目类型标签：用户 / 队伍 */
+.tr-type {
+  flex-shrink: 0;
+  padding: 2rpx 12rpx;
+  border-radius: 100rpx;
+  background: #F0F0F0;
+  color: #888;
+  font-size: 20rpx;
+  line-height: 1.6;
+}
+
+.tr-type.is-team {
+  background: rgba(7, 193, 96, 0.1);
+  color: #07C160;
+}
+
 .tr-name {
   font-size: 30rpx;
   font-weight: 600;
@@ -475,4 +516,24 @@
   font-size: 20rpx;
   color: #BBB;
   margin-top: 4rpx;
+}
+
+/* top10 与我的名次之间的分隔线 */
+.tr-divider {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+  padding: 8rpx 0 20rpx;
+}
+
+.tr-divider-line {
+  flex: 1;
+  height: 1rpx;
+  background: #E5E5E5;
+}
+
+.tr-divider-text {
+  font-size: 22rpx;
+  color: #BBB;
+  letter-spacing: 2rpx;
 }
