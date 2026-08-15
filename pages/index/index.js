@@ -438,10 +438,11 @@ Page({
       })
       this.setData({ items })
 
-      // 300ms 后刷新列表 + 显示庆祝弹层
+      // 300ms 后刷新列表 + 成就横幅 + 显示庆祝弹层
       setTimeout(() => {
         this._renderItems()
         this._loadStats()
+        this.loadAchievementBanner()
         this.setData({
           showBingo: true,
           bingoAmount: savedValue,

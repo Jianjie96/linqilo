@@ -104,7 +104,7 @@
     <view class="section">
       <view class="sec-head">
         <text class="sec-title">{{isTeamView ? (rankScope === 'global' ? '全网排行' : '队内排行') : '全网排行'}}</text>
-        <text class="sec-sub">{{isTeamView ? (rankScope === 'global' ? '队伍与队伍同台竞技' : '按队内贡献排序') : '用户与队伍同台竞技'}}</text>
+        <text class="sec-sub">{{isTeamView ? (rankScope === 'global' ? '用户与队伍同台竞技' : '按队内贡献排序') : '用户与队伍同台竞技'}}</text>
       </view>
 
       <!-- 队伍视角：队内/全网 tab 切换 -->

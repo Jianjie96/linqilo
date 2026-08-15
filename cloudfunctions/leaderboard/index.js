@@ -213,7 +213,7 @@ async function getPersonalStats(openid) {
   const mixed = await computeMixedPercentile(stats.totalSavedValue || 0)
 
   // 混合池排行：全网 top10（用户+队伍混合），若自身不在 top10 则追加
-  const rankingData = await getMixedPoolRanking(openid, stats.totalSavedValue || 0)
+  const rankingData = await getMixedPoolRanking(openid, null, stats.totalSavedValue || 0)
 
   return {
     code: 0,
@@ -233,7 +233,7 @@ async function getPersonalStats(openid) {
   }
 }
 
-// 队伍视角：队伍统计 + 混合池百分位/排名 + 队内排行（internal）/ 全网队伍排行（global）
+// 队伍视角：队伍统计 + 混合池百分位/排名 + 队内排行（internal）/ 全网混合池排行（global）
 async function getTeamStats(teamId, openid, scope) {
   const stats = await getOrCreateTeamStats(teamId)
 
@@ -245,8 +245,8 @@ async function getTeamStats(teamId, openid, scope) {
   let myEntry = null
 
   if (scope === 'global') {
-    // 全网队伍排行：全部队伍按价值排序，top10 + 本队伍不在 top10 时追加
-    const rankingData = await getGlobalTeamRanking(teamId, stats.totalSavedValue || 0)
+    // 全网混合池排行：个人与队伍同台竞技，本队伍不在 top10 时追加
+    const rankingData = await getMixedPoolRanking(null, teamId, stats.totalSavedValue || 0)
     ranking = rankingData.ranking
     myRank = rankingData.myRank
     myEntry = rankingData.myEntry
@@ -275,8 +275,9 @@ async function getTeamStats(teamId, openid, scope) {
 }
 
 // 混合池全网排行：用户与队伍同台竞技
-// 返回 top10 列表；若本人（openid）不在 top10，则追加本人条目
-async function getMixedPoolRanking(openid, myValue) {
+// myUserId：个人视角传本人 openid；myTeamId：队伍视角 global 传本队伍 id（二者必居其一）
+// 返回 top10 列表；若「我」（本人/本队伍）不在 top10，则追加条目
+async function getMixedPoolRanking(myUserId, myTeamId, myValue) {
   const TOP_N = 10
 
   // 取用户池 top N 与队伍池 top N，合并排序后截取 top N（保证混合后前 N 名正确）
@@ -294,15 +295,17 @@ async function getMixedPoolRanking(openid, myValue) {
   ])
 
   const teamIds = teamsRes.data.map(t => t.teamId)
-  const teamNameMap = await getTeamNameMap(teamIds)
+  // 本队伍可能不在 top10 列表中，需一并查询名称
+  const lookupIds = myTeamId && !teamIds.includes(myTeamId) ? teamIds.concat(myTeamId) : teamIds
+  const teamNameMap = await getTeamNameMap(lookupIds)
 
   const userEntries = usersRes.data.map(u => ({
     type: 'user',
-    name: u._openid === openid ? '我' : '用户' + u._openid.slice(-4),
+    name: u._openid === myUserId ? '我' : '用户' + u._openid.slice(-4),
     totalTracked: u.totalTracked || 0,
     totalSaved: u.totalSaved || 0,
     totalSavedValue: u.totalSavedValue || 0,
-    isMine: u._openid === openid
+    isMine: u._openid === myUserId
   }))
   const teamEntries = teamsRes.data.map(t => ({
     type: 'team',
@@ -310,7 +313,7 @@ async function getMixedPoolRanking(openid, myValue) {
     totalTracked: t.totalTracked || 0,
     totalSaved: t.totalSaved || 0,
     totalSavedValue: t.totalSavedValue || 0,
-    isMine: false
+    isMine: t.teamId === myTeamId
   }))
 
   const merged = [...userEntries, ...teamEntries].sort((a, b) => {
@@ -320,77 +323,44 @@ async function getMixedPoolRanking(openid, myValue) {
   })
   const top10 = merged.slice(0, TOP_N).map((e, i) => ({ ...e, rank: i + 1 }))
 
-  // 本人是否已在 top10 中
-  if (top10.some(e => e.isMine)) {
-    return { ranking: top10, myRank: top10.find(e => e.isMine).rank, myEntry: null }
-  }
-
-  // 本人不在 top10：计算其在混合池中的真实名次并追加
-  const myRank = await computeMixedRank(myValue)
-  const myEntry = {
-    type: 'user',
-    name: '我',
-    totalTracked: 0,
-    totalSaved: 0,
-    totalSavedValue: myValue,
-    isMine: true,
-    rank: myRank
-  }
-  // 从个人统计中补齐追踪/避免数据
-  const myStats = await getOrCreatePersonalStats(openid)
-  myEntry.totalTracked = myStats.totalTracked || 0
-  myEntry.totalSaved = myStats.totalSaved || 0
-
-  return { ranking: top10, myRank, myEntry }
-}
-
-// 全网队伍排行：全部队伍按价值排序
-// 返回 top10 列表；若当前队伍不在 top10，则追加当前队伍条目
-async function getGlobalTeamRanking(teamId, myValue) {
-  const TOP_N = 10
-
-  const teamsRes = await db.collection(COLLECTIONS.TEAM_STATS)
-    .orderBy('totalSavedValue', 'desc')
-    .orderBy('totalSaved', 'desc')
-    .limit(TOP_N)
-    .get()
-
-  const teamIds = teamsRes.data.map(t => t.teamId)
-  // 当前队伍可能不在 top10 列表中，需一并查询名称
-  const lookupIds = teamIds.includes(teamId) ? teamIds : teamIds.concat(teamId)
-  const teamNameMap = await getTeamNameMap(lookupIds)
-
-  const top10 = teamsRes.data.map((t, i) => ({
-    type: 'team',
-    name: teamNameMap[t.teamId] || '队伍' + t.teamId.slice(-4),
-    totalTracked: t.totalTracked || 0,
-    totalSaved: t.totalSaved || 0,
-    totalSavedValue: t.totalSavedValue || 0,
-    isMine: t.teamId === teamId,
-    rank: i + 1
-  }))
-
-  // 当前队伍已在 top10 中
+  // 本人/本队伍是否已在 top10 中
   const mineInTop = top10.find(e => e.isMine)
   if (mineInTop) {
     return { ranking: top10, myRank: mineInTop.rank, myEntry: null }
   }
 
-  // 当前队伍不在 top10：计算真实名次并追加
+  // 不在 top10：计算其在混合池中的真实名次并追加
   const myRank = await computeMixedRank(myValue)
-  const myEntry = {
-    type: 'team',
-    name: teamNameMap[teamId] || '我的队伍',
-    totalTracked: 0,
-    totalSaved: 0,
-    totalSavedValue: myValue,
-    isMine: true,
-    rank: myRank
+  let myEntry
+  if (myTeamId) {
+    myEntry = {
+      type: 'team',
+      name: teamNameMap[myTeamId] || '我的队伍',
+      totalTracked: 0,
+      totalSaved: 0,
+      totalSavedValue: myValue,
+      isMine: true,
+      rank: myRank
+    }
+    // 从队伍统计中补齐追踪/避免数据
+    const myStats = await getOrCreateTeamStats(myTeamId)
+    myEntry.totalTracked = myStats.totalTracked || 0
+    myEntry.totalSaved = myStats.totalSaved || 0
+  } else {
+    myEntry = {
+      type: 'user',
+      name: '我',
+      totalTracked: 0,
+      totalSaved: 0,
+      totalSavedValue: myValue,
+      isMine: true,
+      rank: myRank
+    }
+    // 从个人统计中补齐追踪/避免数据
+    const myStats = await getOrCreatePersonalStats(myUserId)
+    myEntry.totalTracked = myStats.totalTracked || 0
+    myEntry.totalSaved = myStats.totalSaved || 0
   }
-  // 从队伍统计中补齐数据
-  const myStats = await getOrCreateTeamStats(teamId)
-  myEntry.totalTracked = myStats.totalTracked || 0
-  myEntry.totalSaved = myStats.totalSaved || 0
 
   return { ranking: top10, myRank, myEntry }
 }

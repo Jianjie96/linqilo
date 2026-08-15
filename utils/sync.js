@@ -98,15 +98,18 @@ async function deleteCloudItem(itemId, groupId) {
 // itemId：用于同一物品同类型事件去重，防止多人重复操作同一物品虚增统计
 
 function recordAdd(teamId, itemId) {
-  return callCloud('leaderboard', { action: 'recordAdd', teamId, itemId }).catch(() => {})
+  return callCloud('leaderboard', { action: 'recordAdd', teamId, itemId })
+    .catch(err => console.error('成就记录失败(recordAdd):', err))
 }
 
 function recordSave(value, teamId, itemId) {
-  return callCloud('leaderboard', { action: 'recordSave', value, teamId, itemId }).catch(() => {})
+  return callCloud('leaderboard', { action: 'recordSave', value, teamId, itemId })
+    .catch(err => console.error('成就记录失败(recordSave):', err))
 }
 
 function recordExpired(teamId, itemId) {
-  return callCloud('leaderboard', { action: 'recordExpired', teamId, itemId }).catch(() => {})
+  return callCloud('leaderboard', { action: 'recordExpired', teamId, itemId })
+    .catch(err => console.error('成就记录失败(recordExpired):', err))
 }
 
 // 获取当前视角的统计 + 排行列表（等级/价值跟视角；「超过全网」混合池：所有个人与队伍同台排名）
