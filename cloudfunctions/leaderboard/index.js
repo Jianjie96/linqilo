@@ -33,7 +33,8 @@ const COLLECTIONS = {
   TEAM_STATS: 'team_stats',
   EVENTS: 'stat_events',
   MEMBERS: 'teamMembers',
-  TEAMS: 'teams'
+  TEAMS: 'teams',
+  USERS: 'users'
 }
 
 const PERSONAL = 'personal'
@@ -299,9 +300,13 @@ async function getMixedPoolRanking(myUserId, myTeamId, myValue) {
   const lookupIds = myTeamId && !teamIds.includes(myTeamId) ? teamIds.concat(myTeamId) : teamIds
   const teamNameMap = await getTeamNameMap(lookupIds)
 
+  // 批量查用户昵称（取不到时回退到 openid 后缀）
+  const userOpenids = usersRes.data.map(u => u._openid)
+  const nickNameMap = await getUserNickNameMap(userOpenids)
+
   const userEntries = usersRes.data.map(u => ({
     type: 'user',
-    name: u._openid === myUserId ? '我' : '用户' + u._openid.slice(-4),
+    name: u._openid === myUserId ? '我' : (nickNameMap[u._openid] || '用户' + u._openid.slice(-4)),
     totalTracked: u.totalTracked || 0,
     totalSaved: u.totalSaved || 0,
     totalSavedValue: u.totalSavedValue || 0,
@@ -388,6 +393,21 @@ async function getTeamNameMap(teamIds) {
   return map
 }
 
+// 批量获取用户昵称映射（用户在个人中心设置过昵称才有值）
+async function getUserNickNameMap(openids) {
+  const map = {}
+  if (openids.length === 0) return map
+
+  const res = await db.collection(COLLECTIONS.USERS)
+    .where({ openid: _.in(openids) })
+    .field({ openid: true, nickName: true })
+    .get()
+  res.data.forEach(u => {
+    if (u.nickName) map[u.openid] = u.nickName
+  })
+  return map
+}
+
 // 混合池百分位/排名：「超过全网 xx%」统计所有个人和队伍的数据情况再排名
 async function computeMixedPercentile(value) {
   const [userTotal, teamTotal, userBelow, teamBelow] = await Promise.all([
@@ -422,9 +442,12 @@ async function getTeamMemberRanking(teamId, openid) {
       .end()
 
     const list = aggRes.list || []
+    // 批量查成员昵称（取不到时回退到 openid 后缀）
+    const memberOpenids = list.map(m => m._id).filter(Boolean)
+    const nickNameMap = await getUserNickNameMap(memberOpenids)
     return list.map((m, i) => ({
       rank: i + 1,
-      name: m._id === openid ? '我' : '成员' + m._id.slice(-4),
+      name: m._id === openid ? '我' : (nickNameMap[m._id] || '成员' + m._id.slice(-4)),
       totalTracked: m.totalTracked || 0,
       totalSaved: m.totalSaved || 0,
       totalSavedValue: m.totalSavedValue || 0,
@@ -466,9 +489,13 @@ async function fallbackTeamMemberRanking(teamId, openid) {
     return (b.totalSaved || 0) - (a.totalSaved || 0)
   })
 
+  // 批量查成员昵称（取不到时回退到 openid 后缀）
+  const memberOpenids = list.map(m => m.openid).filter(Boolean)
+  const nickNameMap = await getUserNickNameMap(memberOpenids)
+
   return list.map((m, i) => ({
     rank: i + 1,
-    name: m.openid === openid ? '我' : '成员' + m.openid.slice(-4),
+    name: m.openid === openid ? '我' : (nickNameMap[m.openid] || '成员' + m.openid.slice(-4)),
     totalTracked: m.totalTracked,
     totalSaved: m.totalSaved,
     totalSavedValue: m.totalSavedValue,
