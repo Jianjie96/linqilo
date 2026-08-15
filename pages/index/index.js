@@ -107,11 +107,11 @@ Page({
       viewTeamName: viewTeam ? viewTeam.name : '个人',
       // 构建切换选项：个人 + 已加入的队伍
       switcherOptions: [
-        { teamId: null, name: '个人', iconClass: 'icon-user-green', isActive: !viewGroupId },
+        { teamId: null, name: '个人', iconClass: !viewGroupId ? 'icon-user-green' : 'icon-user-dark', isActive: !viewGroupId },
         ...(teams || []).map(t => ({
           teamId: t.teamId,
           name: t.name,
-          iconClass: 'icon-users-green',
+          iconClass: t.teamId === viewGroupId ? 'icon-users-green' : 'icon-users-dark',
           isActive: t.teamId === viewGroupId
         }))
       ]
