@@ -120,24 +120,41 @@ function getLeaderboardStats(teamId, scope) {
 
 // --- 订阅管理（保留直连数据库，频率低不影响调试） ---
 
-async function updateSubscription(openid, enabled) {
+// 需用户授权的全部模板：临期提醒 + 队伍事件（新成员加入等）
+// 新增模板时在此追加，页面会自动要求老用户补授权
+const SUBSCRIBE_TEMPLATE_IDS = [
+  '68FxhLOgJgDwUZWFOZFunglKqFWCsHPq3vSwsKI9YPY',
+  'poU7jsRy7SMjpdLCIqby5w-CLcaiSigGLdovQZFjCJc'
+]
+
+// 是否全部模板均已授权（enabled 且 subscribedTemplates 覆盖全部模板）
+// 缺任一模板（含无记录的老用户）返回 false，引导重新授权
+function isFullySubscribed(status) {
+  if (!status || !status.enabled) return false
+  const authorized = Array.isArray(status.subscribedTemplates) ? status.subscribedTemplates : []
+  return SUBSCRIBE_TEMPLATE_IDS.every(id => authorized.includes(id))
+}
+
+async function updateSubscription(openid, enabled, subscribedTemplates) {
   if (!wx.cloud || !openid) return
 
   const db = wx.cloud.database()
   const collection = db.collection(COLLECTION_SUBSCRIPTIONS)
+  const hasTemplates = Array.isArray(subscribedTemplates)
 
   try {
     const existing = await collection.where({ openid }).get()
 
     if (existing.data.length > 0) {
-      await collection.doc(existing.data[0]._id).update({
-        data: { enabled, updatedAt: new Date().toISOString() }
-      })
+      const data = { enabled, updatedAt: new Date().toISOString() }
+      if (hasTemplates) data.subscribedTemplates = subscribedTemplates
+      await collection.doc(existing.data[0]._id).update({ data })
     } else {
       await collection.add({
         data: {
           openid,
           enabled,
+          subscribedTemplates: hasTemplates ? subscribedTemplates : [],
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString()
         }
@@ -149,7 +166,7 @@ async function updateSubscription(openid, enabled) {
 }
 
 async function getSubscriptionStatus(openid) {
-  if (!wx.cloud || !openid) return { enabled: false }
+  if (!wx.cloud || !openid) return { enabled: false, subscribedTemplates: [] }
 
   const db = wx.cloud.database()
   const collection = db.collection(COLLECTION_SUBSCRIPTIONS)
@@ -157,12 +174,17 @@ async function getSubscriptionStatus(openid) {
   try {
     const res = await collection.where({ openid }).get()
     if (res.data.length > 0) {
-      return { enabled: res.data[0].enabled }
+      return {
+        enabled: res.data[0].enabled,
+        subscribedTemplates: Array.isArray(res.data[0].subscribedTemplates)
+          ? res.data[0].subscribedTemplates
+          : []
+      }
     }
-    return { enabled: false }
+    return { enabled: false, subscribedTemplates: [] }
   } catch (err) {
     console.error('查询订阅状态失败:', err)
-    return { enabled: false }
+    return { enabled: false, subscribedTemplates: [] }
   }
 }
 
@@ -232,6 +254,8 @@ module.exports = {
   recordSave,
   recordExpired,
   getLeaderboardStats,
+  SUBSCRIBE_TEMPLATE_IDS,
+  isFullySubscribed,
   updateSubscription,
   getSubscriptionStatus,
   createTeam,

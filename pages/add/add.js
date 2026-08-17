@@ -41,13 +41,13 @@ Page({
     }
   },
 
-  // 检查通知订阅状态
+  // 检查通知订阅状态（全部模板均已授权才视为已订阅）
   async checkSubscriptionStatus() {
     const openid = app.globalData.openid
     if (!openid) return
     try {
       const status = await syncUtil.getSubscriptionStatus(openid)
-      this.setData({ isSubscribed: status.enabled })
+      this.setData({ isSubscribed: syncUtil.isFullySubscribed(status) })
     } catch (err) {
       // 静默失败
     }

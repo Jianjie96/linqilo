@@ -149,7 +149,8 @@ Page({
 
     try {
       const status = await syncUtil.getSubscriptionStatus(openid)
-      this.setData({ isSubscribed: status.enabled })
+      // 全部模板均已授权才视为「已开启」；缺任一模板（含老用户无记录）都引导重新授权
+      this.setData({ isSubscribed: syncUtil.isFullySubscribed(status) })
     } catch (err) {
       console.error('查询订阅状态失败:', err)
     }
@@ -162,11 +163,7 @@ Page({
     }
 
     wx.requestSubscribeMessage({
-      // 临期提醒模板 + 队伍事件模板（新成员加入等）
-      tmplIds: [
-        '68FxhLOgJgDwUZWFOZFunglKqFWCsHPq3vSwsKI9YPY',
-        'poU7jsRy7SMjpdLCIqby5w-CLcaiSigGLdovQZFjCJc'
-      ],
+      tmplIds: syncUtil.SUBSCRIBE_TEMPLATE_IDS,
       success: async (res) => {
         console.log('订阅授权结果:', res)
         const openid = app.globalData.openid
@@ -175,10 +172,27 @@ Page({
           return
         }
 
-        await syncUtil.updateSubscription(openid, true)
-        this.setData({ isSubscribed: true })
+        // 本次通过授权的模板（reject/ban 视为未授权），与历史记录合并
+        const acceptedNow = syncUtil.SUBSCRIBE_TEMPLATE_IDS.filter(id => res[id] === 'accept')
+        let prevTemplates = []
+        try {
+          const status = await syncUtil.getSubscriptionStatus(openid)
+          prevTemplates = Array.isArray(status.subscribedTemplates) ? status.subscribedTemplates : []
+        } catch (e) {
+          // 查询失败时仅以本次授权结果为准
+        }
+        const subscribedTemplates = Array.from(new Set([...prevTemplates, ...acceptedNow]))
 
-        wx.showToast({ title: '已开启通知', icon: 'success' })
+        // 所有模板都授权才置为开启，否则下次进入仍引导重新授权
+        const allAuthorized = syncUtil.SUBSCRIBE_TEMPLATE_IDS.every(id => subscribedTemplates.includes(id))
+        await syncUtil.updateSubscription(openid, allAuthorized, subscribedTemplates)
+        this.setData({ isSubscribed: allAuthorized })
+
+        if (allAuthorized) {
+          wx.showToast({ title: '已开启通知', icon: 'success' })
+        } else {
+          wx.showToast({ title: '请授权全部通知类型后重试', icon: 'none', duration: 2500 })
+        }
       },
       fail: (err) => {
         console.error('订阅授权失败:', err)
@@ -193,7 +207,7 @@ Page({
 
     wx.showModal({
       title: '关闭通知',
-      content: '关闭后将不再收到临期提醒消息',
+      content: '关闭后将不再收到临期提醒与队伍动态消息',
       success: async (res) => {
         if (res.confirm) {
           await syncUtil.updateSubscription(openid, false)
