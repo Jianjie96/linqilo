@@ -90,8 +90,12 @@
 
       <!-- 成员列表 -->
       <view class="detail-section">
-        <text class="detail-label">成员（{{detailMembers.length}}人）</text>
-        <view class="member-list">
+        <text class="detail-label">成员（{{membersLoading ? '加载中…' : detailMembers.length + '人'}}）</text>
+        <view class="member-loading" wx:if="{{membersLoading}}">
+          <view class="member-loading-spinner"></view>
+          <text>正在加载成员…</text>
+        </view>
+        <view class="member-list" wx:else>
           <view class="member-item" wx:for="{{detailMembers}}" wx:key="openid">
             <image class="member-avatar" src="{{item.avatarUrl}}" mode="aspectFill" wx:if="{{item.avatarUrl}}"></image>
             <view class="member-avatar member-avatar-default icon icon-user-dark" wx:else></view>

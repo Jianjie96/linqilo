@@ -23,6 +23,7 @@ Page({
     showDetail: false,
     detailTeam: null,
     detailMembers: [],
+    membersLoading: false,
 
     // 加载状态
     loading: true
@@ -150,7 +151,7 @@ Page({
     const team = this.data.teams.find(t => t.teamId === teamId)
     if (!team) return
 
-    this.setData({ showDetail: true, detailTeam: team, detailMembers: [] })
+    this.setData({ showDetail: true, detailTeam: team, detailMembers: [], membersLoading: true })
 
     try {
       const result = await syncUtil.getTeamMembers(teamId)
@@ -159,10 +160,12 @@ Page({
         detailTeam: {
           ...team,
           inviteCode: result.data.inviteCode || team.inviteCode
-        }
+        },
+        membersLoading: false
       })
     } catch (err) {
       console.error('获取成员列表失败:', err)
+      this.setData({ membersLoading: false })
     }
   },
 
