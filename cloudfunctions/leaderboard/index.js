@@ -77,10 +77,15 @@ async function isTeamMember(openid, teamId) {
 }
 
 // 获取或创建个人统计记录
+// 历史「先查后插」并发竞态可能产生同一 openid 的重复记录：
+// 合并为一条（数值求和）并清理多余记录，保证排行列表与名次卡片读取同一份数据
 async function getOrCreatePersonalStats(openid) {
-  const res = await db.collection(COLLECTIONS.USER_STATS).where({ _openid: openid }).get()
-  if (res.data.length > 0) {
+  const res = await db.collection(COLLECTIONS.USER_STATS).where({ _openid: openid }).limit(100).get()
+  if (res.data.length === 1) {
     return res.data[0]
+  }
+  if (res.data.length > 1) {
+    return mergeStatDocs(COLLECTIONS.USER_STATS, res.data)
   }
 
   const newRecord = {
@@ -96,11 +101,14 @@ async function getOrCreatePersonalStats(openid) {
   return { _id: addRes._id, ...newRecord }
 }
 
-// 获取或创建队伍统计记录
+// 获取或创建队伍统计记录（同样做重复记录自愈合并）
 async function getOrCreateTeamStats(teamId) {
-  const res = await db.collection(COLLECTIONS.TEAM_STATS).where({ teamId }).get()
-  if (res.data.length > 0) {
+  const res = await db.collection(COLLECTIONS.TEAM_STATS).where({ teamId }).limit(100).get()
+  if (res.data.length === 1) {
     return res.data[0]
+  }
+  if (res.data.length > 1) {
+    return mergeStatDocs(COLLECTIONS.TEAM_STATS, res.data)
   }
 
   const newRecord = {
@@ -114,6 +122,52 @@ async function getOrCreateTeamStats(teamId) {
   }
   const addRes = await db.collection(COLLECTIONS.TEAM_STATS).add({ data: newRecord })
   return { _id: addRes._id, ...newRecord }
+}
+
+// 合并同一主体的重复统计记录：数值字段求和，保留首条、删除其余，返回合并后的记录
+async function mergeStatDocs(collection, docs) {
+  const sums = { totalTracked: 0, totalSaved: 0, totalSavedValue: 0, totalExpired: 0 }
+  docs.forEach(d => {
+    sums.totalTracked += d.totalTracked || 0
+    sums.totalSaved += d.totalSaved || 0
+    sums.totalSavedValue += d.totalSavedValue || 0
+    sums.totalExpired += d.totalExpired || 0
+  })
+
+  const keep = docs[0]
+  await db.collection(collection).doc(keep._id).update({
+    data: { ...sums, updatedAt: new Date().toISOString() }
+  })
+  for (let i = 1; i < docs.length; i++) {
+    await db.collection(collection).doc(docs[i]._id).remove()
+  }
+  return { ...keep, ...sums }
+}
+
+// 全量自愈：拉取两个聚合集合，按 openid/teamId 分组，重复的合并为一条
+async function healDuplicateStats() {
+  const [usersRes, teamsRes] = await Promise.all([
+    db.collection(COLLECTIONS.USER_STATS).limit(1000).get(),
+    db.collection(COLLECTIONS.TEAM_STATS).limit(1000).get()
+  ])
+
+  const byUser = {}
+  usersRes.data.forEach(d => {
+    if (!d._openid) return
+    ;(byUser[d._openid] = byUser[d._openid] || []).push(d)
+  })
+  for (const docs of Object.values(byUser)) {
+    if (docs.length > 1) await mergeStatDocs(COLLECTIONS.USER_STATS, docs)
+  }
+
+  const byTeam = {}
+  teamsRes.data.forEach(d => {
+    if (!d.teamId) return
+    ;(byTeam[d.teamId] = byTeam[d.teamId] || []).push(d)
+  })
+  for (const docs of Object.values(byTeam)) {
+    if (docs.length > 1) await mergeStatDocs(COLLECTIONS.TEAM_STATS, docs)
+  }
 }
 
 // 写账本事件：同一 (teamId, itemId, type) 只记一次；返回是否真正写入
@@ -196,6 +250,9 @@ async function recordExpired(openid, teamId, itemId) {
 
 // 获取指定视角统计 + 排行列表（跟随视角）
 async function getStats(openid, teamId, scope) {
+  // 读取前先全量自愈重复统计记录，保证名次/百分位/排行列表同口径
+  await healDuplicateStats()
+
   const t = resolveTeamId(teamId)
   if (t === PERSONAL) {
     return getPersonalStats(openid)
