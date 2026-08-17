@@ -382,8 +382,8 @@
 }
 
 .btn-dissolve {
-  color: #FF3B30;
-  border: 2rpx solid #FF3B30;
+  color: #fff;
+  background: #FF3B30;
 }
 
 .btn-edit-icon {
