@@ -162,7 +162,11 @@ Page({
     }
 
     wx.requestSubscribeMessage({
-      tmplIds: ['68FxhLOgJgDwUZWFOZFunglKqFWCsHPq3vSwsKI9YPY'],
+      // 临期提醒模板 + 队伍事件模板（新成员加入等）
+      tmplIds: [
+        '68FxhLOgJgDwUZWFOZFunglKqFWCsHPq3vSwsKI9YPY',
+        'poU7jsRy7SMjpdLCIqby5w-CLcaiSigGLdovQZFjCJc'
+      ],
       success: async (res) => {
         console.log('订阅授权结果:', res)
         const openid = app.globalData.openid

@@ -10,13 +10,15 @@ const _ = db.command
  * 临期提醒云函数
  * 
  * 功能：
- *   1. 定时触发（每天早上 8:00）
- *   2. 查询所有用户的临期物品
- *   3. 给已订阅的用户发送微信订阅消息
+ *   1. 定时触发（每天早上 8:00）：查询所有用户的临期物品并推送
+ *   2. 事件触发（由 teams / items 云函数调用）：
+ *      - action='memberJoined'：有人加入队伍，全队成员（含本人）收到入队通知
+ *      - action='itemAdded'：队伍内新增物品，全队成员收到提醒（复用临期模板）
  * 
  * 推送范围（订阅集合模型）：
  *   用户的订阅目标 = 个人空间 + 已加入的所有队伍，减去手动静音（users.mutedGroups）的目标；
  *   一条推送汇总所有订阅目标的临期数据（个人与队伍分别统计件数）。
+ *   注意：静音仅作用于每日临期推送，入队/新增物品等事件通知发给全部成员。
  * 
  * 使用前提：
  *   1. 在微信公众平台「订阅消息」中选用模板并获取 templateId
@@ -31,6 +33,12 @@ const _ = db.command
 //   time6   - 过期日期
 //   thing3  - 备注
 const TEMPLATE_ID = '68FxhLOgJgDwUZWFOZFunglKqFWCsHPq3vSwsKI9YPY'
+
+// 队伍事件模板（新成员加入）：
+//   thing1  - 昵称
+//   thing2  - 群组名
+//   thing3  - 备注
+const TEAM_EVENT_TEMPLATE_ID = 'poU7jsRy7SMjpdLCIqby5w-CLcaiSigGLdovQZFjCJc'
 
 const APPID = 'wx742667049b5e316a'
 
@@ -148,6 +156,14 @@ function sendSubscribeMessage({ touser, templateId, page, data }) {
 exports.main = async (event, context) => {
   if (TEST_MODE) {
     return await testNotify()
+  }
+
+  // 事件触发（由 teams / items 云函数 callFunction 调用）
+  if (event.action === 'memberJoined') {
+    return await notifyMemberJoined(event)
+  }
+  if (event.action === 'itemAdded') {
+    return await notifyItemAdded(event)
   }
 
   try {
@@ -305,6 +321,144 @@ exports.main = async (event, context) => {
       success: false,
       error: err.message
     }
+  }
+}
+
+// --- 事件通知：新成员加入队伍 ---
+// event: { action: 'memberJoined', teamId, openid, nickName? }
+// 全队成员（含加入者本人）各收到一条：xxx 加入了队伍
+async function notifyMemberJoined(event) {
+  const { teamId, openid } = event
+  try {
+    if (!teamId || !openid) {
+      return { success: false, error: '缺少 teamId 或 openid' }
+    }
+
+    const [teamRes, membersRes] = await Promise.all([
+      db.collection('teams').where({ teamId }).get(),
+      db.collection('teamMembers').where({ teamId }).get()
+    ])
+
+    const team = (teamRes.data || [])[0]
+    if (!team) return { success: false, error: '队伍不存在' }
+
+    const memberOpenids = (membersRes.data || []).map(m => m.openid)
+    if (memberOpenids.length === 0) return { success: true, sent: 0 }
+
+    // 加入者昵称（未设置资料时兜底「新成员」）
+    let nickName = event.nickName
+    if (!nickName) {
+      const userRes = await db.collection('users')
+        .where({ openid })
+        .field({ nickName: true })
+        .get()
+      nickName = (userRes.data && userRes.data[0] && userRes.data[0].nickName) || '新成员'
+    }
+
+    let sentCount = 0
+    const errors = []
+
+    for (const memberOpenid of memberOpenids) {
+      const remark = memberOpenid === openid
+        ? '加入成功，和队友一起记录临期物品吧'
+        : '加入了队伍，欢迎新队友'
+      try {
+        await sendSubscribeMessage({
+          touser: memberOpenid,
+          templateId: TEAM_EVENT_TEMPLATE_ID,
+          page: '/pages/team/team',
+          data: {
+            thing1: { value: nickName.substring(0, 20) },
+            thing2: { value: team.name.substring(0, 20) },
+            thing3: { value: remark.substring(0, 20) }
+          }
+        })
+        sentCount++
+      } catch (err) {
+        // 43101 = 用户未订阅/拒收，静默跳过
+        if (err.errCode !== 43101) {
+          errors.push({ openid: memberOpenid, error: err.errCode || err.message })
+        }
+      }
+    }
+
+    return {
+      success: true,
+      sent: sentCount,
+      total: memberOpenids.length,
+      errors: errors.length > 0 ? errors : undefined,
+      message: `入队通知发送 ${sentCount}/${memberOpenids.length} 条`
+    }
+  } catch (err) {
+    console.error('入队通知发送失败:', err)
+    return { success: false, error: err.message }
+  }
+}
+
+// --- 事件通知：队伍内新增物品 ---
+// event: { action: 'itemAdded', teamId, openid, itemName, expiryDate }
+// 全队成员各收到一条（复用临期模板），备注注明：xxx 在 xxx 添加了 xxx
+async function notifyItemAdded(event) {
+  const { teamId, openid, itemName, expiryDate } = event
+  try {
+    if (!teamId || !openid || !itemName) {
+      return { success: false, error: '缺少 teamId / openid / itemName' }
+    }
+
+    const [teamRes, membersRes] = await Promise.all([
+      db.collection('teams').where({ teamId }).get(),
+      db.collection('teamMembers').where({ teamId }).get()
+    ])
+
+    const team = (teamRes.data || [])[0]
+    if (!team) return { success: false, error: '队伍不存在' }
+
+    const memberOpenids = (membersRes.data || []).map(m => m.openid)
+    if (memberOpenids.length === 0) return { success: true, sent: 0 }
+
+    // 添加者昵称（未设置资料时兜底「队友」）
+    const userRes = await db.collection('users')
+      .where({ openid })
+      .field({ nickName: true })
+      .get()
+    const nickName = (userRes.data && userRes.data[0] && userRes.data[0].nickName) || '队友'
+
+    const remark = `${nickName}在${team.name}添加了${itemName}`
+
+    let sentCount = 0
+    const errors = []
+
+    for (const memberOpenid of memberOpenids) {
+      try {
+        await sendSubscribeMessage({
+          touser: memberOpenid,
+          templateId: TEMPLATE_ID,
+          page: '/pages/index/index',
+          data: {
+            thing7: { value: itemName.substring(0, 20) },
+            time6: { value: expiryDate || formatDate(new Date()) },
+            thing3: { value: remark.substring(0, 20) }
+          }
+        })
+        sentCount++
+      } catch (err) {
+        // 43101 = 用户未订阅/拒收，静默跳过
+        if (err.errCode !== 43101) {
+          errors.push({ openid: memberOpenid, error: err.errCode || err.message })
+        }
+      }
+    }
+
+    return {
+      success: true,
+      sent: sentCount,
+      total: memberOpenids.length,
+      errors: errors.length > 0 ? errors : undefined,
+      message: `新增物品通知发送 ${sentCount}/${memberOpenids.length} 条`
+    }
+  } catch (err) {
+    console.error('新增物品通知发送失败:', err)
+    return { success: false, error: err.message }
   }
 }
 

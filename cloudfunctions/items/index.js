@@ -157,6 +157,25 @@ async function addItem(openid, groupId, item) {
   }
 
   const res = await db.collection(COLLECTION).add({ data })
+
+  // 队伍物品：通知全队成员「xxx 在 xxx 添加了 xxx」（失败不影响添加流程）
+  if (groupId) {
+    try {
+      await cloud.callFunction({
+        name: 'notify',
+        data: {
+          action: 'itemAdded',
+          teamId: groupId,
+          openid,
+          itemName: item.name,
+          expiryDate: item.expiryDate
+        }
+      })
+    } catch (err) {
+      console.error('队伍新增物品通知触发失败:', err)
+    }
+  }
+
   return { code: 0, data: { _id: res._id, ...item } }
 }
 

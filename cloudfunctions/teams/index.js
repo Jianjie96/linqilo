@@ -142,6 +142,16 @@ async function joinTeam(openid, inviteCode) {
   // 确保队伍成就聚合存在（兼容旧队伍）
   await ensureTeamStats(team.teamId)
 
+  // 触发入队通知：全队成员（含本人）收到「xxx 加入了队伍」（失败不影响加入流程）
+  try {
+    await cloud.callFunction({
+      name: 'notify',
+      data: { action: 'memberJoined', teamId: team.teamId, openid }
+    })
+  } catch (err) {
+    console.error('入队通知触发失败:', err)
+  }
+
   return {
     code: 0,
     data: { teamId: team.teamId, name: team.name }
