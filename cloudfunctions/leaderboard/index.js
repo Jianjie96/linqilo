@@ -467,25 +467,25 @@ async function getUserNickNameMap(openids) {
 }
 
 // 混合池百分位/排名：「超过全网 xx%」统计所有个人和队伍的数据情况再排名
-// 与全网排行列表统一口径：rank = 严格高于我的主体数 + 1（并列取靠前名次），
-// percentile = 被我超过（严格低于我）的主体占比；并列同分视为不输于对方，一并计入
+// 与全网排行列表统一口径：rank = 严格高于我的主体数 + 1（并列取靠前名次）。
+// 注意：大量历史记录缺失 totalSavedValue 字段（不是 0），lt/gt/eq 均不会命中它们，
+// 因此 rank 必须直接 count(gt) 得出，绝不能用总数减法反推（分区不完备会算错）
 async function computeMixedPercentile(value) {
-  const [userTotal, teamTotal, userBelow, teamBelow, userEqual, teamEqual] = await Promise.all([
+  const [userTotal, teamTotal, userBelow, teamBelow, userAbove, teamAbove] = await Promise.all([
     db.collection(COLLECTIONS.USER_STATS).count(),
     db.collection(COLLECTIONS.TEAM_STATS).count(),
     db.collection(COLLECTIONS.USER_STATS).where({ totalSavedValue: _.lt(value) }).count(),
     db.collection(COLLECTIONS.TEAM_STATS).where({ totalSavedValue: _.lt(value) }).count(),
-    db.collection(COLLECTIONS.USER_STATS).where({ totalSavedValue: value }).count(),
-    db.collection(COLLECTIONS.TEAM_STATS).where({ totalSavedValue: value }).count()
+    db.collection(COLLECTIONS.USER_STATS).where({ totalSavedValue: _.gt(value) }).count(),
+    db.collection(COLLECTIONS.TEAM_STATS).where({ totalSavedValue: _.gt(value) }).count()
   ])
 
   const totalSubjects = userTotal.total + teamTotal.total
-  // 并列主体含自身，百分位统计需扣除自己
-  const beatenOrTied = userBelow.total + teamBelow.total + userEqual.total + teamEqual.total - 1
-  const percentile = totalSubjects > 1 ? Math.round((beatenOrTied / totalSubjects) * 100) : 0
-  const above = totalSubjects - beatenOrTied - 1
+  const below = userBelow.total + teamBelow.total
+  const rank = userAbove.total + teamAbove.total + 1
+  const percentile = totalSubjects > 0 ? Math.round((below / totalSubjects) * 100) : 0
 
-  return { percentile, rank: above + 1, totalSubjects }
+  return { percentile, rank, totalSubjects }
 }
 
 // 队内成员贡献排行：聚合账本（$group）；聚合失败时降级为内存聚合
