@@ -29,6 +29,16 @@ Page({
   },
 
   onLoad() {
+    // 剪贴板口令识别后跳转进来：自动填入邀请码并直接加入
+    if (app.globalData.pendingInviteCode) {
+      const code = app.globalData.pendingInviteCode
+      app.globalData.pendingInviteCode = ''
+      this.setData({ joinCode: code })
+      this.loadData()
+      // 稍等页面渲染后自动加入，省去手动点「加入」
+      setTimeout(() => this.joinTeam(), 400)
+      return
+    }
     this.loadData()
   },
 
@@ -159,7 +169,7 @@ Page({
     this.setData({ showDetail: false })
   },
 
-  // --- 复制邀请码 ---
+  // --- 复制邀请码（仅复制 6 位码，供手动粘贴） ---
   copyInviteCode() {
     const code = this.data.detailTeam?.inviteCode
     if (!code) return
@@ -168,6 +178,21 @@ Page({
       data: code,
       success: () => {
         wx.showToast({ title: '邀请码已复制', icon: 'success' })
+      }
+    })
+  },
+
+  // --- 邀请好友（复制「口令」文案，含邀请码；好友打开小程序自动识别填入） ---
+  inviteFriends() {
+    const team = this.data.detailTeam
+    const code = team?.inviteCode
+    if (!code) return
+
+    const text = `【叮咚到期】队伍邀请\nTA 邀请你加入队伍「${team.name}」\n邀请码：${code}\n复制本条消息，打开「叮咚到期」小程序即可自动填入邀请码~`
+    wx.setClipboardData({
+      data: text,
+      success: () => {
+        wx.showToast({ title: '邀请口令已复制，发给好友吧', icon: 'none', duration: 2500 })
       }
     })
   },

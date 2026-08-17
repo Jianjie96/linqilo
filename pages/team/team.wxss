@@ -263,6 +263,20 @@
   border-radius: 16rpx;
 }
 
+.invite-share {
+  font-size: 24rpx;
+  color: #fff;
+  background-color: #07C160;
+  padding: 6rpx 16rpx;
+  border-radius: 16rpx;
+  line-height: 1.4;
+  margin: 0;
+}
+
+.invite-share::after {
+  border: none;
+}
+
 .invite-refresh {
   font-size: 24rpx;
   color: #FF9500;

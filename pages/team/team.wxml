@@ -74,6 +74,7 @@
         <text class="detail-label">邀请码</text>
         <view class="invite-code-row">
           <text class="invite-code">{{detailTeam.inviteCode}}</text>
+          <button class="invite-share" bindtap="inviteFriends">邀请</button>
           <text class="invite-copy" bindtap="copyInviteCode">复制</text>
           <text class="invite-refresh" wx:if="{{detailTeam.isCreator}}" bindtap="refreshCode">刷新</text>
         </view>
