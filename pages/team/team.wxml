@@ -62,10 +62,18 @@
   </view>
 
   <!-- 队伍详情弹层 -->
-  <view class="detail-overlay" wx:if="{{showDetail}}" bindtap="hideTeamDetail">
+  <view class="detail-overlay" wx:if="{{showDetail}}">
     <view class="detail-card" catchtap="">
       <view class="detail-header">
-        <text class="detail-title">{{detailTeam.name}}</text>
+        <input
+          wx:if="{{detailTeam.isCreator}}"
+          class="detail-title detail-title-input"
+          value="{{detailTeam.name}}"
+          maxlength="20"
+          bindblur="onRenameBlur"
+          bindconfirm="onRenameConfirm"
+        />
+        <text wx:else class="detail-title">{{detailTeam.name}}</text>
         <view class="detail-close icon icon-close-gray" bindtap="hideTeamDetail"></view>
       </view>
 
@@ -74,7 +82,7 @@
         <text class="detail-label">邀请码</text>
         <view class="invite-code-row">
           <text class="invite-code">{{detailTeam.inviteCode}}</text>
-          <button class="invite-share" bindtap="inviteFriends">邀请</button>
+          <text class="invite-share" bindtap="inviteFriends">邀请</text>
           <text class="invite-copy" bindtap="copyInviteCode">复制</text>
           <text class="invite-refresh" wx:if="{{detailTeam.isCreator}}" bindtap="refreshCode">刷新</text>
         </view>
@@ -97,17 +105,10 @@
 
       <!-- 操作按钮 -->
       <view class="detail-actions">
-        <view class="detail-action-row" wx:if="{{detailTeam.isCreator}}">
-          <button class="btn-secondary" bindtap="renameTeam">
-            <view class="icon icon-pencil-green btn-edit-icon"></view>
-            <text>修改名称</text>
-          </button>
-          <button class="btn-dissolve" bindtap="dissolveTeam">
-            <view class="icon icon-trash-red btn-edit-icon"></view>
-            <text>解散队伍</text>
-          </button>
+        <view class="detail-action-row">
+          <button class="btn-leave" bindtap="leaveTeam">退出队伍</button>
+          <button class="btn-dissolve" wx:if="{{detailTeam.isCreator}}" bindtap="dissolveTeam">解散队伍</button>
         </view>
-        <button class="btn-leave" bindtap="leaveTeam">彻底退出</button>
       </view>
     </view>
   </view>

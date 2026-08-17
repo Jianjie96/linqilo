@@ -224,6 +224,13 @@
   color: #333;
 }
 
+.detail-title-input {
+  flex: 1;
+  height: 48rpx;
+  line-height: 48rpx;
+  margin-right: 16rpx;
+}
+
 .detail-close {
   width: 40rpx;
   height: 40rpx;
@@ -269,12 +276,6 @@
   background-color: #07C160;
   padding: 6rpx 16rpx;
   border-radius: 16rpx;
-  line-height: 1.4;
-  margin: 0;
-}
-
-.invite-share::after {
-  border: none;
 }
 
 .invite-refresh {
@@ -381,7 +382,7 @@
 }
 
 .btn-leave {
-  width: 100%;
+  flex: 1;
   height: 80rpx;
   display: flex;
   align-items: center;
@@ -393,7 +394,7 @@
   color: #FF3B30;
   border: 2rpx solid #FF3B30;
   border-radius: 16rpx;
-  font-size: 30rpx;
+  font-size: 28rpx;
   font-weight: 500;
   line-height: normal;
 }

@@ -224,39 +224,36 @@ Page({
     })
   },
 
-  // --- 修改队伍名称（仅创建者） ---
-  renameTeam() {
+  // --- 修改队伍名称（仅创建者；标题即输入框，失焦/回车直接保存，不再弹框） ---
+  onRenameBlur(e) {
+    this._saveTeamName((e.detail.value || '').trim())
+  },
+
+  onRenameConfirm(e) {
+    this._saveTeamName((e.detail.value || '').trim())
+  },
+
+  async _saveTeamName(name) {
     const teamId = this.data.detailTeam?.teamId
     const oldName = this.data.detailTeam?.name
     if (!teamId) return
+    if (!name) {
+      wx.showToast({ title: '队伍名称不能为空', icon: 'none' })
+      return
+    }
+    if (name === oldName) return
 
-    wx.showModal({
-      title: '修改队伍名称',
-      editable: true,
-      placeholderText: oldName,
-      content: oldName,
-      success: async (res) => {
-        if (!res.confirm) return
-        const name = (res.content || '').trim()
-        if (!name) {
-          wx.showToast({ title: '队伍名称不能为空', icon: 'none' })
-          return
-        }
-        if (name === oldName) return
-
-        wx.showLoading({ title: '保存中...' })
-        try {
-          await syncUtil.renameTeam(teamId, name)
-          wx.hideLoading()
-          wx.showToast({ title: '已修改', icon: 'success' })
-          this.setData({ 'detailTeam.name': name })
-          await this.loadData()
-        } catch (err) {
-          wx.hideLoading()
-          wx.showToast({ title: err.message || '修改失败', icon: 'none' })
-        }
-      }
-    })
+    wx.showLoading({ title: '保存中...' })
+    try {
+      await syncUtil.renameTeam(teamId, name)
+      wx.hideLoading()
+      wx.showToast({ title: '已修改', icon: 'success' })
+      this.setData({ 'detailTeam.name': name })
+      await this.loadData()
+    } catch (err) {
+      wx.hideLoading()
+      wx.showToast({ title: err.message || '修改失败', icon: 'none' })
+    }
   },
 
   // --- 解散队伍（仅创建者，极低频、强提醒：数据全部删除不可恢复） ---
