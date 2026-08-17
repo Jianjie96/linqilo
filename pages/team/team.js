@@ -28,15 +28,16 @@ Page({
     loading: true
   },
 
-  onLoad() {
-    // 剪贴板口令识别后跳转进来：自动填入邀请码并直接加入
-    if (app.globalData.pendingInviteCode) {
-      const code = app.globalData.pendingInviteCode
-      app.globalData.pendingInviteCode = ''
-      this.setData({ joinCode: code })
+  onLoad(options) {
+    // 被邀请进入：分享卡片带邀请码参数，弹框确认后加入
+    if (options && options.inviteCode) {
+      this._pendingInvite = {
+        code: options.inviteCode,
+        teamName: options.teamName ? decodeURIComponent(options.teamName) : ''
+      }
       this.loadData()
-      // 稍等页面渲染后自动加入，省去手动点「加入」
-      setTimeout(() => this.joinTeam(), 400)
+      // 稍等页面渲染后弹出邀请确认框
+      setTimeout(() => this._confirmInvite(), 400)
       return
     }
     this.loadData()
@@ -182,19 +183,48 @@ Page({
     })
   },
 
-  // --- 邀请好友（复制「口令」文案，含邀请码；好友打开小程序自动识别填入） ---
-  inviteFriends() {
+  // --- 邀请好友（转发分享卡片，带邀请码参数；好友点开即弹框确认加入） ---
+  onShareAppMessage(res) {
     const team = this.data.detailTeam
-    const code = team?.inviteCode
-    if (!code) return
+    // 从「邀请」按钮触发且当前有队伍：分享带邀请码的组队页
+    if (res.from === 'button' && team?.inviteCode) {
+      return {
+        title: `邀请你加入队伍「${team.name}」`,
+        path: `/pages/team/team?inviteCode=${team.inviteCode}&teamName=${encodeURIComponent(team.name || '')}`
+      }
+    }
+    // 其余（右上角菜单分享）走全局通用分享
+    return shareMixin.onShareAppMessage.call(this)
+  },
 
-    const text = `【叮咚到期】队伍邀请\nTA 邀请你加入队伍「${team.name}」\n邀请码：${code}\n复制本条消息，打开「叮咚到期」小程序即可自动填入邀请码~`
-    wx.setClipboardData({
-      data: text,
-      success: () => {
-        wx.showToast({ title: '邀请口令已复制，发给好友吧', icon: 'none', duration: 2500 })
+  // --- 被邀请进入：弹框展示队伍名称，确认后加入 ---
+  _confirmInvite() {
+    const invite = this._pendingInvite
+    if (!invite) return
+    this._pendingInvite = null
+    const { code, teamName } = invite
+    wx.showModal({
+      title: '队伍邀请',
+      content: teamName ? `邀请你加入队伍「${teamName}」` : `收到一条队伍邀请（邀请码 ${code}）`,
+      confirmText: '确认加入',
+      cancelText: '取消',
+      success: (r) => {
+        if (r.confirm) this._joinByInvite(code)
       }
     })
+  },
+
+  async _joinByInvite(code) {
+    wx.showLoading({ title: '加入中...' })
+    try {
+      const result = await syncUtil.joinTeam(code)
+      wx.hideLoading()
+      wx.showToast({ title: `已加入「${result.data.name}」`, icon: 'success' })
+      await this.loadData()
+    } catch (err) {
+      wx.hideLoading()
+      wx.showToast({ title: err.message || '加入失败', icon: 'none' })
+    }
   },
 
   // --- 刷新邀请码 ---

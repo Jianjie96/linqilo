@@ -10,8 +10,7 @@ App({
     // 组队相关
     mutedGroups: [],      // 推送静音目标集合（'personal' 或队伍 id），默认全部订阅
     viewGroupId: undefined, // 当前视角（同步后端）：undefined = 未初始化，null = 个人，队伍 id = 队伍视角
-    teams: [],            // 已加入的队伍列表
-    pendingInviteCode: '' // 剪贴板口令识别出的待填入邀请码
+    teams: []             // 已加入的队伍列表
   },
 
   _loadItemsPromise: null,  // 防重入：复用正在进行的请求
@@ -24,10 +23,6 @@ App({
       this.initCloud()
     }
     this.loadSettings()
-  },
-
-  onShow() {
-    this.checkInviteClipboard()
   },
 
   // 云端初始化：获取 openid + 加载组队信息（完成后视角就绪）
@@ -190,40 +185,5 @@ App({
       ? this.globalData.mutedGroups.concat(target)
       : this.globalData.mutedGroups.filter(t => t !== target)
     return muted
-  },
-
-  // 识别剪贴板中的队伍邀请口令（个人主体无 URL Link，采用口令方案）：
-  // 好友复制「邀请口令」后打开小程序，读到邀请码即引导其去组队页填入
-  checkInviteClipboard() {
-    // 节流：30 秒内不重复读取剪贴板，避免频繁切换触发系统读取提示
-    const now = Date.now()
-    if (this._lastClipboardCheck && now - this._lastClipboardCheck < 30000) return
-    this._lastClipboardCheck = now
-    setTimeout(() => {
-      wx.getClipboardData({
-        success: (res) => {
-          const text = res.data || ''
-          const m = text.match(/邀请码[：:]\s*([A-Za-z0-9]{6})/)
-          if (!m) return
-          const code = m[1].toUpperCase()
-          // 同一邀请码只引导一次，避免反复打扰
-          try {
-            if (wx.getStorageSync('inviteCodePrompted') === code) return
-            wx.setStorageSync('inviteCodePrompted', code)
-          } catch (e) {}
-          wx.showModal({
-            title: '队伍邀请',
-            content: `检测到队伍邀请码 ${code}，确认后将自动加入该队伍`,
-            confirmText: '加入',
-            cancelText: '忽略',
-            success: (r) => {
-              if (!r.confirm) return
-              this.globalData.pendingInviteCode = code
-              wx.navigateTo({ url: '/pages/team/team' })
-            }
-          })
-        }
-      })
-    }, 600)
   }
 })

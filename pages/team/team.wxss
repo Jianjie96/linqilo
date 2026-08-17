@@ -271,11 +271,26 @@
 }
 
 .invite-share {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: auto !important;
+  height: auto;
+  min-height: 0;
+  margin: 0 !important;
+  padding: 6rpx 16rpx !important;
   font-size: 24rpx;
+  font-weight: normal;
+  line-height: 1.4;
   color: #fff;
   background-color: #07C160;
-  padding: 6rpx 16rpx;
+  border: none;
   border-radius: 16rpx;
+  box-sizing: border-box;
+}
+
+.invite-share::after {
+  border: none;
 }
 
 .invite-refresh {
