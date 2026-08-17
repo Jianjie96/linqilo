@@ -190,13 +190,32 @@ Page({
 
         if (allAuthorized) {
           wx.showToast({ title: '已开启通知', icon: 'success' })
+        } else if (acceptedNow.length === 0) {
+          // 一个模板都没通过：多半是之前选过「拒绝且不再询问」，
+          // 此后弹窗不会再出现，只能引导去设置页的通知管理重新打开
+          this._guideToNotificationSetting()
         } else {
           wx.showToast({ title: '请授权全部通知类型后重试', icon: 'none', duration: 2500 })
         }
       },
       fail: (err) => {
         console.error('订阅授权失败:', err)
-        wx.showToast({ title: '授权失败，请重试', icon: 'none' })
+        this._guideToNotificationSetting()
+      }
+    })
+  },
+
+  // 授权被拒且不再弹窗时的引导：去小程序设置页的「通知管理」重新打开后重试
+  _guideToNotificationSetting() {
+    wx.showModal({
+      title: '无法开启通知',
+      content: '通知授权曾被拒绝，请点击右上角「···」→「设置」→「通知管理」打开通知开关，返回后重新点击开启',
+      confirmText: '去设置页',
+      cancelText: '知道了',
+      success: (res) => {
+        if (res.confirm) {
+          wx.openSetting()
+        }
       }
     })
   },
